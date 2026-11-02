@@ -1,0 +1,55 @@
+{
+  "port": 3000,
+  "templeName": "CHÙA AN LẠC",
+  "templeSubtitle": "Cầu Bình An – Cầu Tài Lộc – Cầu May Mắn",
+  "ticker": "Hữu duyên tương ngộ nơi cửa Phật, cầu cho tất cả chúng sinh được bình an, mạnh khỏe, vạn sự như ý.",
+  "bigGiftCoins": 99,
+  "platforms": {
+    "tiktok": {
+      "enabled": true,
+      "demo": true,
+      "username": "ten_kenh_tiktok"
+    },
+    "youtube": {
+      "enabled": true,
+      "demo": true,
+      "channelId": "UCxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "facebook": {
+      "enabled": true,
+      "demo": true,
+      "pageId": "",
+      "pageAccessToken": ""
+    }
+  },
+  "voice": {
+    "enabled": true,
+    "readJoins": false,
+    "maxQueue": 8,
+    "perUserCooldownSec": 30,
+    "maxChars": 120,
+    "engine": "vbee",
+    "vbee": {
+      "appId": "DAN-APP-ID-VAO-DAY",
+      "token": "DAN-TOKEN-VAO-DAY",
+      "voiceCode": "MA-GIONG-THIEN-DUC",
+      "mode": "auto",
+      "speed": 0.9,
+      "outputFormat": "mp3",
+      "bitrate": 64,
+      "webhookUrl": ""
+    },
+    "http_khac": {
+      "_ghi_chu": "Chỉ dùng khi đổi engine thành \"http\" (API giọng nói khác)",
+      "url": "http://DIA-CHI:9880/tts",
+      "method": "GET",
+      "query": {
+        "text": "{text}"
+      },
+      "body": null,
+      "headers": {},
+      "responseType": "audio",
+      "timeoutMs": 20000
+    }
+  }
+}
