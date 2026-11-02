@@ -32,7 +32,7 @@ const server = http.createServer((req, res) => {
   const seg = u.pathname.split('/').filter(Boolean);
   if (!seg.length) { res.writeHead(302, { Location: '/' + Object.keys(rooms)[0] }); return res.end(); }
   if (seg.length === 1 && rooms[seg[0]]) {   // gắn mã phiên bản vào trang để khung biết mình cũ hay mới
-    const html = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8').replace('__UIVER__', uiVersion());
+    const html = fs.readFileSync(path.join(PUB, PAGE), 'utf8').replace('__UIVER__', uiVersion());
     res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-cache' }); return res.end(html);
   }
   if (seg[0] === 'voice' && seg[1] && /^[\w.]+$/.test(seg[1])) return sendFile(res, path.join(CACHE_DIR, seg[1]));
@@ -69,7 +69,9 @@ function sendFile(res, f) {
 
 // Phiên bản giao diện = dấu của index.html + ảnh nền. Đổi file → overlay (LIVE Studio / OBS) tự tải lại, không phải bấm tay.
 const PUB = path.join(__dirname, 'public');
-const WATCH = ['index.html', path.join('img', 'chanh-dien.jpg')];
+// CHUA_PAGE=<file>: server thử dùng trang khác trong public/ (sửa giao diện mới mà khung đang live không tự tải theo)
+const PAGE = process.env.CHUA_PAGE || 'index.html';
+const WATCH = [PAGE, path.join('img', 'chanh-dien.jpg')];
 function uiVersion() {
   const h = require('crypto').createHash('sha1');
   for (const f of WATCH) { try { h.update(fs.readFileSync(path.join(PUB, f))); } catch {} }
