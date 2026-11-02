@@ -109,7 +109,7 @@ const PL = { x: 8, y: 240, w: 222 }, PR = { x: 490, y: 240, w: 222 };
 // ---------------- ảnh ----------------
 const BG = { img: new Image(), ok: false };
 BG.img.onload = () => { BG.ok = true; buildStatic(); };
-BG.img.src = '/img/chanh-dien.jpg';
+BG.img.src = '/img/chanh-dien.jpg?v=' + Date.now();   // LIVE Studio giữ ảnh cũ trong bộ nhớ đệm → mỗi lần tải trang lấy ảnh mới
 const AVC = new Map();     // ảnh đại diện: url -> Image
 function avatarImg(url){ if (!url) return null; let a = AVC.get(url);
   if (!a) { a = { img: new Image(), ok: false }; a.img.onload = () => a.ok = true; a.img.src = url; AVC.set(url, a); if (AVC.size > 300) AVC.delete(AVC.keys().next().value); }
