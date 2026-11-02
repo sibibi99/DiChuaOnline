@@ -6,8 +6,10 @@ const { WebSocketServer } = require('ws');
 const { Room } = require('./lib/room');
 const { VoiceEngine, CACHE_DIR } = require('./lib/voice');
 
-const cfgFile = fs.existsSync(path.join(__dirname, 'config.json')) ? 'config.json' : 'config.example.json';
-const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, cfgFile), 'utf8'));
+// CHUA_CONFIG=<đường dẫn> + PORT=<cổng>: chạy thêm 1 server thử song song server live
+const cfgFile = process.env.CHUA_CONFIG || (fs.existsSync(path.join(__dirname, 'config.json')) ? 'config.json' : 'config.example.json');
+const cfg = JSON.parse(fs.readFileSync(path.resolve(__dirname, cfgFile), 'utf8'));
+if (process.env.PORT) cfg.port = +process.env.PORT;
 if (process.env.VOICE_ENGINE) cfg.voice.engine = process.env.VOICE_ENGINE;
 console.log('Cấu hình:', cfgFile);
 
