@@ -42,9 +42,11 @@ const server = http.createServer((req, res) => {
   }
   // Thử nhanh bằng trình duyệt: /test/tiktok/gift  /test/tiktok/chat?text=...
   if (seg[0] === 'test' && rooms[seg[1]]) {
-    const r = rooms[seg[1]], who = { id: 'test', name: u.searchParams.get('name') || 'Người thử' };
+    const name = u.searchParams.get('name') || 'Người thử', who = { id: 'test-' + name, name };
+    const r = rooms[seg[1]];
     if (seg[2] === 'gift') r.onGift(who, u.searchParams.get('gift') || 'Sư tử', 1, +(u.searchParams.get('coins') || 299));
     else if (seg[2] === 'like') r.onLike(who, +(u.searchParams.get('count') || 5));
+    else if (seg[2] === 'share') r.onShare(who);
     else r.onChat(who, u.searchParams.get('text') || 'Nam mô A Di Đà Phật');
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('ok');
   }

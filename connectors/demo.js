@@ -6,8 +6,8 @@ const NAMES = ['Minh Anh', 'Thu Hà', 'Quốc Bảo', 'Ngọc Diệp', 'Hoàng N
 const CHATS = ['Nam mô A Di Đà Phật', 'Nam mô a di đà phật 🙏', 'A Di Đà Phật', 'Nam mô Đại Bi Quán Thế Âm Bồ Tát',
   'Cầu cho mẹ con mau khỏe', 'Con cầu thi đỗ đại học ạ', 'Cầu cho gia đình bình an', 'Cầu buôn bán thuận lợi',
   'Con xin cho ba qua khỏi bệnh', 'Cầu cho con có việc làm ổn định', 'Nam mô a di đà phật', 'Cầu bình an cho cả nhà',
-  'vào zalo 0909123456 nhận quà', 'đm live gì chán'];
-const GIFTS = [['Hoa hồng', 1], ['Hoa hồng', 1], ['Hoa hồng', 1], ['Hoa hồng', 1], ['Tim', 5], ['Kẹo bông', 10], ['Tim', 5], ['Mũ chúc mừng', 99]];
+  'vào zalo 0909123456 nhận quà', 'đm live gì chán', 'thắp đèn', 'cầu an cho cả nhà', 'xin xăm đầu năm'];
+const GIFTS = [['Hoa hồng', 1], ['Hoa hồng', 1], ['Hoa hồng', 1], ['Hoa hồng', 1], ['Tim', 5], ['Kẹo bông', 10], ['Tim', 5], ['Nhẫn kim cương', 30], ['Mũ chúc mừng', 99]];
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 module.exports = function startDemo(room, opt = {}) {
@@ -21,5 +21,6 @@ module.exports = function startDemo(room, opt = {}) {
   every(1400, () => room.onLike(user(), 1 + Math.floor(Math.random() * 8)));
   every(7000, () => { const [g, c] = pick(GIFTS); const n = g === 'Hoa hồng' ? 1 + Math.floor(Math.random() * 5) : 1; room.onGift(user(), g, n, c * n); });
   every(3000, () => room.onJoin(user()));
+  every(15000, () => room.onShare(user()));
   return () => timers.forEach(t => { clearInterval(t); clearTimeout(t); });
 };

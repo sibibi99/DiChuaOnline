@@ -4,7 +4,11 @@ const { TikTokLiveConnection, WebcastEvent, ControlEvent } = require('tiktok-liv
 module.exports = function startTikTok(room, opt) {
   let conn, retry = 15000, stopped = false;
   // proto v3: user.id / user.displayId; bản cũ: userId / uniqueId
-  const U = d => { const u = d?.user || {}; return { id: String(u.id || u.userId || u.displayId || u.uniqueId || ''), name: u.nickname || u.displayId || u.uniqueId }; };
+  const U = d => {
+    const u = d?.user || {};
+    const avatar = u.avatarThumb?.urlList?.[0] || u.profilePictureUrl || '';
+    return { id: String(u.id || u.userId || u.displayId || u.uniqueId || ''), name: u.nickname || u.displayId || u.uniqueId, avatar };
+  };
 
   async function connect() {
     if (stopped) return;
@@ -18,6 +22,7 @@ module.exports = function startTikTok(room, opt) {
     conn.on(WebcastEvent.CHAT, d => { const text = d.content ?? d.comment; if (text) room.onChat(U(d), text); });
     conn.on(WebcastEvent.LIKE, d => room.onLike(U(d), d.count || d.likeCount || 1));
     conn.on(WebcastEvent.FOLLOW, d => room.onFollow(U(d)));
+    if (WebcastEvent.SHARE) conn.on(WebcastEvent.SHARE, d => room.onShare(U(d)));   // chia sẻ live -> Cầu an gia đạo
     conn.on(WebcastEvent.GIFT, d => {
       const type = d.gift?.type ?? d.giftDetails?.giftType;
       if (type === 1 && !d.repeatEnd) return;           // quà chuỗi: chỉ tính khi kết thúc
