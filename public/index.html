@@ -580,7 +580,12 @@ async function speak(m){
 
 // ---------------- kết nối server ----------------
 let ws;
-function hello(){ if (ws && ws.readyState===1) ws.send(JSON.stringify({ t:'hello', w:innerWidth, h:innerHeight, dpr:window.devicePixelRatio||1, sc:SC, ua:navigator.userAgent.slice(0,120) })); }
+// mã phiên bản do server gắn khi trả trang; server báo bản mới (sửa giao diện / ảnh nền) thì tự tải lại, không cần bấm tay trong LIVE Studio
+const UIVER = '__UIVER__';
+let reloading = false;
+function checkVer(v){ if (!v || v === UIVER || UIVER.startsWith('__') || reloading) return; reloading = true;
+  setTimeout(() => location.reload(), 1500 + Math.random() * 1500); }   // lệch nhau vài giây nếu mở nhiều khung
+function hello(){ if (ws && ws.readyState===1) ws.send(JSON.stringify({ t:'hello', w:innerWidth, h:innerHeight, dpr:window.devicePixelRatio||1, sc:SC, ver:UIVER, ua:navigator.userAgent.slice(0,120) })); }
 function connect(){
   ws = new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws?p='+PLATFORM);
   ws.onmessage = e => handle(JSON.parse(e.data));
@@ -596,7 +601,9 @@ function handle(m){
   const t = now();
   if (m.id && (m.t==='chat'||m.t==='like'||m.t==='gift'||m.t==='ritual')) S.active.set(m.id,t);   // người vừa tương tác: ứng viên được mời lên chánh điện
   switch(m.t){
+    case 'ver': checkVer(m.ver); break;
     case 'snapshot':
+      checkVer(m.ver);
       Object.assign(S,{temple:m.temple||S.temple,ticker:m.ticker||'',seats:m.seats,top:m.top,next:m.next||[],niem:m.niem,likes:m.likes||0,stageMin:m.stageMin||0});
       if (m.rituals) S.rituals = m.rituals;
       buildStatic(); break;

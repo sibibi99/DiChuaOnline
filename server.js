@@ -31,7 +31,10 @@ const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   const seg = u.pathname.split('/').filter(Boolean);
   if (!seg.length) { res.writeHead(302, { Location: '/' + Object.keys(rooms)[0] }); return res.end(); }
-  if (seg.length === 1 && rooms[seg[0]]) return sendFile(res, path.join(__dirname, 'public', 'index.html'));
+  if (seg.length === 1 && rooms[seg[0]]) {   // gắn mã phiên bản vào trang để khung biết mình cũ hay mới
+    const html = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8').replace('__UIVER__', uiVersion());
+    res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-cache' }); return res.end(html);
+  }
   if (seg[0] === 'voice' && seg[1] && /^[\w.]+$/.test(seg[1])) return sendFile(res, path.join(CACHE_DIR, seg[1]));
   // ảnh tĩnh của overlay (vd tượng Quan Âm): public/img/<file>
   if (seg[0] === 'img' && seg[1] && /^[\w.-]+$/.test(seg[1])) {
@@ -64,15 +67,32 @@ function sendFile(res, f) {
   });
 }
 
+// Phiên bản giao diện = dấu của index.html + ảnh nền. Đổi file → overlay (LIVE Studio / OBS) tự tải lại, không phải bấm tay.
+const PUB = path.join(__dirname, 'public');
+const WATCH = ['index.html', path.join('img', 'chanh-dien.jpg')];
+function uiVersion() {
+  const h = require('crypto').createHash('sha1');
+  for (const f of WATCH) { try { h.update(fs.readFileSync(path.join(PUB, f))); } catch {} }
+  return h.digest('hex').slice(0, 10);
+}
+let UIVER = uiVersion(), verT;
+for (const f of WATCH) fs.watchFile(path.join(PUB, f), { interval: 2000 }, () => {
+  clearTimeout(verT); verT = setTimeout(() => {
+    const v = uiVersion(); if (v === UIVER) return; UIVER = v;
+    console.log(`[overlay] ${new Date().toLocaleTimeString('vi-VN')} giao diện mới ${v} → báo các khung tự tải lại`);
+    for (const r of Object.values(rooms)) r.broadcast({ t: 'ver', ver: v });
+  }, 1500);
+});
+
 const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', (ws, req) => {
   const p = new URL(req.url, 'http://x').searchParams.get('p');
   const room = rooms[p]; if (!room) return ws.close();
   room.clients.add(ws);
-  ws.send(JSON.stringify(room.snapshot()));
+  ws.send(JSON.stringify({ ...room.snapshot(), ver: uiVersion() }));   // khung cũ nối lại sau khi khởi động server → thấy khác bản → tự tải lại
   setTimeout(() => room.voice.kick(), 1500);
   ws.on('message', m => { try { const j = JSON.parse(m); if (j.t === 'spoken') room.voice.done(j.id);
-    if (j.t === 'hello') console.log(`[overlay] ${new Date().toLocaleTimeString('vi-VN')} ${p} khung ${j.w}×${j.h} dpr ${j.dpr} → vẽ ${Math.round(720 * j.sc)}×${Math.round(1280 * j.sc)} | ${j.ua}`); } catch {} });
+    if (j.t === 'hello') console.log(`[overlay] ${new Date().toLocaleTimeString('vi-VN')} ${p} khung ${j.w}×${j.h} dpr ${j.dpr} → vẽ ${Math.round(720 * j.sc)}×${Math.round(1280 * j.sc)} | bản ${j.ver || 'CŨ (cần tải lại tay 1 lần)'} | ${j.ua}`); } catch {} });
   ws.on('close', () => { room.clients.delete(ws); if (room.voice.playing) room.voice.done(); });
 });
 
