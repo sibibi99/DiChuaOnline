@@ -19,7 +19,7 @@ module.exports = function startFacebook(room, opt) {
       `&comment_rate=one_hundred_per_second&fields=from{name,id},message`;
     const res = await fetch(url, { signal: ac.signal, headers: { Accept: 'text/event-stream' } });
     if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text()).slice(0, 200));
-    console.log('[facebook] đang đọc bình luận live', videoId);
+    console.log('[facebook] đang đọc bình luận live', videoId); room.live = true;
     const dec = new TextDecoder(); let buf = '';
     for await (const chunk of res.body) {
       buf += dec.decode(chunk, { stream: true });
@@ -42,7 +42,7 @@ module.exports = function startFacebook(room, opt) {
     try {
       const id = await findLive();
       if (!id) { console.log('[facebook] Trang chưa live → kiểm tra lại sau 60 giây'); }
-      else if (id !== current) { current = id; await listen(id); console.log('[facebook] luồng bình luận đóng'); current = null; }
+      else if (id !== current) { current = id; await listen(id); console.log('[facebook] luồng bình luận đóng'); current = null; room.live = false; }
     } catch (e) {
       if (!stopped) console.log('[facebook] lỗi:', e.message); current = null;
     }

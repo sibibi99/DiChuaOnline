@@ -13,7 +13,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 module.exports = function startDemo(room, opt = {}) {
   const speed = opt.speed || 1;
   const user = () => { const n = pick(NAMES); return { id: 'demo-' + n, name: n }; };
-  const timers = [];
+  const timers = []; room.live = true;
   const every = (ms, fn) => timers.push(setInterval(fn, ms / speed));
   // vào phòng dồn dập lúc đầu cho đầy chùa
   for (let i = 0; i < 22; i++) timers.push(setTimeout(() => room.onJoin(user()), (200 + i * 260) / speed));

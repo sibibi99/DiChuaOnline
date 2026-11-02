@@ -36,7 +36,7 @@ module.exports = function startTikTok(room, opt) {
     try {
       const st = await conn.connect();
       console.log('[tiktok] đã kết nối phòng', st?.roomId || '');
-      retry = 15000;
+      retry = 15000; room.live = true;
     } catch (e) {
       console.log('[tiktok] chưa kết nối được:', e?.message || e, '→ thử lại sau', retry / 1000, 'giây');
       later();
@@ -44,7 +44,7 @@ module.exports = function startTikTok(room, opt) {
   }
   let timer;
   function later() {
-    clearTimeout(timer); try { conn?.disconnect(); } catch {}
+    clearTimeout(timer); try { conn?.disconnect(); } catch {} room.live = false;
     // tối đa 30 giây: vừa bật live là overlay nhận bình luận / tim gần như ngay
     timer = setTimeout(connect, retry); retry = Math.min(retry * 2, 30000);
   }

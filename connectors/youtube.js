@@ -13,9 +13,12 @@ module.exports = function startYouTube(room, opt) {
   let chat, stopped = false, timer, seen = new Set();
   async function connect() {
     if (stopped) return;
-    chat = new LiveChat({ channelId: opt.channelId });
-    chat.on('start', id => { console.log('[youtube] đang đọc chat live', id); seen = new Set(); });
-    chat.on('end', r => { console.log('[youtube] live kết thúc', r || ''); later(); });
+    // nhận 1 trong 3: handle "@ten_kenh" (dễ nhất), channelId "UC…", hoặc liveId của 1 buổi live cụ thể
+    const id = opt.handle ? { handle: opt.handle.startsWith('@') ? opt.handle : '@' + opt.handle }
+      : opt.liveId ? { liveId: opt.liveId } : { channelId: opt.channelId };
+    chat = new LiveChat(id);
+    chat.on('start', id => { console.log('[youtube] đang đọc chat live', id); seen = new Set(); room.live = true; });
+    chat.on('end', r => { console.log('[youtube] live kết thúc', r || ''); room.live = false; later(); });
     chat.on('error', e => console.log('[youtube] lỗi:', e?.message || e));
     chat.on('chat', it => {
       const key = it.id || (it.author.channelId + it.timestamp);

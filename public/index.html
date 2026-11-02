@@ -352,7 +352,8 @@ function frame(){
   // dải chữ chạy
   const TY=196;x.fillStyle=lg(0,TY,0,TY+28,[[0,'#7a1208'],[1,'#4a0904']]);x.fillRect(0,TY,W,28);
   x.strokeStyle='#e0aa48';x.lineWidth=1.5;x.beginPath();x.moveTo(0,TY+.5);x.lineTo(W,TY+.5);x.moveTo(0,TY+27.5);x.lineTo(W,TY+27.5);x.stroke();
-  const tk=(S.ticker||'Nam mô Bổn Sư Thích Ca Mâu Ni Phật · Chat “Nam mô A Di Đà Phật” để cùng niệm Phật · Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
+  // câu hướng dẫn vào chánh điện luôn đứng đầu, rồi tới lời của chùa (config.ticker)
+  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   Chat “thắp đèn” · “cầu an” · “xin xăm” để làm pháp sự   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
   x.font='italic 600 15px '+SERIF;const tw=x.measureText(tk).width;const off=(t/26)%tw;
   for(let k=0;k<Math.ceil(W/tw)+1;k++)txt(tk,-off+k*tw,TY+19,'italic 600 15px '+SERIF,'#ffe7b0','left');
   // 4 pháp sự: bộ đếm
@@ -488,11 +489,12 @@ async function speak(m){
 
 // ---------------- kết nối server ----------------
 let ws;
+function hello(){ if (ws && ws.readyState===1) ws.send(JSON.stringify({ t:'hello', w:innerWidth, h:innerHeight, dpr:window.devicePixelRatio||1, sc:SC, ua:navigator.userAgent.slice(0,120) })); }
 function connect(){
   ws = new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws?p='+PLATFORM);
   ws.onmessage = e => handle(JSON.parse(e.data));
   // báo cỡ khung thật về server (đọc ở log) để biết nguồn Link / OBS đang vẽ ở độ phân giải nào
-  ws.onopen = () => ws.send(JSON.stringify({ t:'hello', w:innerWidth, h:innerHeight, dpr:window.devicePixelRatio||1, sc:SC, ua:navigator.userAgent.slice(0,120) }));
+  ws.onopen = hello;
   ws.onclose = () => setTimeout(connect, 2000);
 }
 function arrive(id,t){ // người mới có chỗ: đi dọc thảm vào chỗ (tối đa 6 người đi cùng lúc, còn lại hiện dần)
@@ -537,7 +539,7 @@ function handle(m){
 }
 
 document.getElementById('tap').onclick = () => { AC && AC.resume(); BGM && BGM.play().catch(()=>{}); document.getElementById('tap').style.display='none'; };
-let rsT; addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { const s = pickScale(); if (s !== SC) { applyScale(); buildStatic(); } }, 300); });
+let rsT; addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { const s = pickScale(); if (s !== SC) { applyScale(); buildStatic(); } hello(); }, 300); });
 buildStatic(); audioInit(); connect(); requestAnimationFrame(frame);
 const VN='ÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬĐÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴàáảãạăằắẳẵặâầấẩẫậđèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ';
 if (document.fonts) Promise.all(['800 60px "Playfair Display"','italic 500 20px "Playfair Display"','800 16px "Be Vietnam Pro"','700 16px "Be Vietnam Pro"']

@@ -67,9 +67,13 @@ wss.on('connection', (ws, req) => {
   ws.send(JSON.stringify(room.snapshot()));
   setTimeout(() => room.voice.kick(), 1500);
   ws.on('message', m => { try { const j = JSON.parse(m); if (j.t === 'spoken') room.voice.done(j.id);
-    if (j.t === 'hello') console.log(`[overlay] ${p} khung ${j.w}×${j.h} dpr ${j.dpr} → vẽ ${Math.round(720 * j.sc)}×${Math.round(1280 * j.sc)} | ${j.ua}`); } catch {} });
+    if (j.t === 'hello') console.log(`[overlay] ${new Date().toLocaleTimeString('vi-VN')} ${p} khung ${j.w}×${j.h} dpr ${j.dpr} → vẽ ${Math.round(720 * j.sc)}×${Math.round(1280 * j.sc)} | ${j.ua}`); } catch {} });
   ws.on('close', () => { room.clients.delete(ws); if (room.voice.playing) room.voice.done(); });
 });
+
+// tắt server (Ctrl+C / đóng cửa sổ): ghi ngay bảng vàng, bộ đếm chưa kịp lưu
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'])
+  process.on(sig, () => { for (const r of Object.values(rooms)) if (r.saveT) r.flush(); process.exit(0); });
 
 server.listen(cfg.port || 3000, () => {
   console.log(`\nChùa Online đang chạy:`);
