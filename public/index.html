@@ -47,6 +47,10 @@ ROWS.forEach(([yy,s]) => { const half = carpetHalf(yy);
 
 // ---------------- lớp tĩnh ----------------
 let BACK, MID;
+// Tượng Quan Âm: dùng ảnh public/img/quan-am.png nếu có, không thì vẽ bằng hình khối
+const STATUE = { img: new Image(), ok: false };
+STATUE.img.onload = () => { STATUE.ok = true; buildStatic(); };
+STATUE.img.src = '/img/quan-am.png';
 function buildStatic(){
   BACK = layer(() => {
     x.fillStyle=lg(0,0,0,H,[[0,'#3a120a'],[.6,'#5a1c0e'],[1,'#2a0c06']]);x.fillRect(0,0,W,H);
@@ -71,6 +75,11 @@ function buildStatic(){
     }
     bush(108,560);bush(W-108,560);
     const ivory=(x0,x1)=>lg(x0,0,x1,0,[[0,'#d9cdb8'],[.45,'#fffaf0'],[.7,'#f4ecdc'],[1,'#c9bba3']]);
+    if (STATUE.ok) {
+      // ảnh tượng thật (nền trong suốt), đế đứng trên mặt bàn thờ, khung 320×460 (không đè bảng tên chùa)
+      const k=Math.min(320/STATUE.img.width,460/STATUE.img.height),sw=STATUE.img.width*k,sh=STATUE.img.height*k;
+      x.drawImage(STATUE.img,QX-sw/2,AY-8-sh,sw,sh);
+    } else {
     x.fillStyle='#e9e3d8';for(let i=0;i<7;i++){x.beginPath();x.arc(QX-120+i*40,672,26,0,7);x.fill();}
     x.strokeStyle='#bdb3a2';x.lineWidth=1.5;for(let i=0;i<7;i++){x.beginPath();x.arc(QX-120+i*40,672,14,3.4,6.0);x.stroke();}
     for(let i=0;i<9;i++){const px=QX-130+i*29;x.fillStyle=ivory(px,px+30);x.beginPath();x.moveTo(px,650);x.quadraticCurveTo(px+15,598,px+30,650);x.closePath();x.fill();x.strokeStyle='#c8bda9';x.stroke();}
@@ -86,6 +95,7 @@ function buildStatic(){
     x.fillStyle='#fff6ea';x.beginPath();x.ellipse(QX+30,392,9,16,-.2,0,7);x.fill();
     x.fillStyle=ivory(QX-50,QX-20);x.beginPath();x.ellipse(QX-34,430,10,18,0,0,7);x.fill();
     x.strokeStyle='#5d8c4a';x.lineWidth=2;x.beginPath();x.moveTo(QX-34,414);x.quadraticCurveTo(QX-40,396,QX-30,388);x.stroke();
+    }
     // bàn thờ
     x.fillStyle=lg(0,AY,0,AY+170,[[0,'#5a160b'],[1,'#36090a']]);x.fillRect(70,AY,580,170);
     x.fillStyle=GOLD(AY-10,AY+6);x.fillRect(60,AY-10,600,16);

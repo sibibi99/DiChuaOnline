@@ -24,13 +24,15 @@ for (const p of PLATFORMS) {
   else if (p === 'facebook') require('./connectors/facebook')(rooms[p], pc);
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.png': 'image/png' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg' };
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   const seg = u.pathname.split('/').filter(Boolean);
   if (!seg.length) { res.writeHead(302, { Location: '/' + Object.keys(rooms)[0] }); return res.end(); }
   if (seg.length === 1 && rooms[seg[0]]) return sendFile(res, path.join(__dirname, 'public', 'index.html'));
   if (seg[0] === 'voice' && seg[1] && /^[\w.]+$/.test(seg[1])) return sendFile(res, path.join(CACHE_DIR, seg[1]));
+  // ảnh tĩnh của overlay (vd tượng Quan Âm): public/img/<file>
+  if (seg[0] === 'img' && seg[1] && /^[\w.-]+$/.test(seg[1])) return sendFile(res, path.join(__dirname, 'public', 'img', seg[1]));
   // Vbee gọi lại khi tạo xong (nếu vbee.webhookUrl trỏ về đây)
   if (seg[0] === 'vbee-webhook' && req.method === 'POST') {
     let b = ''; req.on('data', d => b += d); req.on('end', () => { try { engine.vbee?.webhook(JSON.parse(b)); } catch {} res.end('ok'); });

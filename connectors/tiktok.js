@@ -8,7 +8,8 @@ module.exports = function startTikTok(room, opt) {
   async function connect() {
     if (stopped) return;
     conn = new TikTokLiveConnection(opt.username, {
-      enableExtendedGiftInfo: true,
+      // tải danh sách quà cần ký request qua Euler Stream gói Business; sự kiện quà đã có tên + số xu nên tắt mặc định
+      enableExtendedGiftInfo: !!opt.extendedGiftInfo,
       signApiKey: opt.signApiKey || undefined,
     });
     conn.on(WebcastEvent.MEMBER, d => room.onJoin(U(d)));
