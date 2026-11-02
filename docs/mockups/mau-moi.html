@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<title>Chùa Online – 3 mẫu mới</title>
+<!-- Bản phác 3 mẫu giao diện mới (ảnh tĩnh). Mở ?v=1 | ?v=2 | ?v=3
+     1 Đêm Hoa Đăng: hồ đêm trăng rằm, mỗi Phật tử là một hoa đăng trôi trên hồ
+     2 Kim Quang Đại Bi: mạn đà la vàng, Phật tử là huy hiệu vàng xếp hình vòng cung
+     3 Phổ Đà Bình Minh: bình minh trên mây, hạc bay, Phật tử là đèn lồng treo -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,500&family=Be+Vietnam+Pro:wght@500;700;800&display=swap&subset=vietnamese" rel="stylesheet">
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh;object-fit:contain}</style>
+</head><body>
+<canvas id="c" width="720" height="1280"></canvas>
+<script>
+'use strict';
+const W = 720, H = 1280, x = document.getElementById('c').getContext('2d');
+const V = +(new URLSearchParams(location.search).get('v') || 1);
+const SERIF = '"Playfair Display",serif', SANS = '"Be Vietnam Pro",sans-serif';
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647, (seed - 1) / 2147483646);
+const IMG = new Image(); IMG.src = '../../public/img/quan-am.png';
+
+// ---------------- công cụ ----------------
+function lg(x0,y0,x1,y1,st){const g=x.createLinearGradient(x0,y0,x1,y1);st.forEach(([o,cl])=>g.addColorStop(o,cl));return g;}
+function rg(cx,cy,r0,r1,st){const g=x.createRadialGradient(cx,cy,r0,cx,cy,r1);st.forEach(([o,cl])=>g.addColorStop(o,cl));return g;}
+function glow(cx,cy,r,inner,outer){x.fillStyle=rg(cx,cy,0,r,[[0,inner],[1,outer]]);x.beginPath();x.arc(cx,cy,r,0,7);x.fill();}
+function rr(a,b,w,h,q){x.beginPath();x.roundRect(a,b,w,h,q);}
+function txt(t,X,Y,font,fill,align='center',o={}){x.save();x.font=font;x.textAlign=align;if(o.spacing)x.letterSpacing=o.spacing+'px';
+  if(o.shadow){x.shadowColor=o.shadow[0];x.shadowBlur=o.shadow[1];}
+  if(o.stroke){x.lineJoin='round';x.lineWidth=o.stroke[1];x.strokeStyle=o.stroke[0];x.strokeText(t,X,Y);}
+  x.fillStyle=fill;x.fillText(t,X,Y);x.restore();}
+const GOLD = (y0,y1) => lg(0,y0,0,y1,[[0,'#fff6cf'],[.42,'#ffd56e'],[.58,'#d9982a'],[1,'#fff0b4']]);
+
+function statue(cx,by,h,o={}){
+  const k=h/IMG.height,w=IMG.width*k,X=cx-w/2,Y=by-h;
+  if(o.reflect){ // bóng phản chiếu gợn sóng trên mặt nước
+    const off=document.createElement('canvas');off.width=Math.ceil(w);off.height=Math.ceil(h);const q=off.getContext('2d');
+    q.translate(0,h);q.scale(1,-1);q.drawImage(IMG,0,0,w,h);q.setTransform(1,0,0,1,0,0);
+    q.globalCompositeOperation='destination-in';const g=q.createLinearGradient(0,0,0,h*.6);g.addColorStop(0,'rgba(0,0,0,.55)');g.addColorStop(1,'rgba(0,0,0,0)');q.fillStyle=g;q.fillRect(0,0,w,h);
+    for(let yy=0;yy<h*.6;yy+=2){const dx=Math.sin(yy/7)*(2+yy/40);x.drawImage(off,0,yy,w,2,X+dx,by+yy,w,2);}
+  }
+  x.save();x.shadowColor=o.halo||'rgba(255,215,130,.95)';x.shadowBlur=o.blur??45;x.drawImage(IMG,X,Y,w,h);x.restore();
+  x.drawImage(IMG,X,Y,w,h);
+}
+function title(top,y,th){
+  txt(top,360,y,`800 15px ${SANS}`,th.accent,'center',{spacing:7});
+  txt('CHÙA AN LẠC',360,y+70,`800 66px ${SERIF}`,GOLD(y+18,y+76),'center',{shadow:[th.shadow,22],stroke:[th.stroke,5]});
+  txt('Cầu Bình An – Cầu Tài Lộc – Cầu May Mắn',360,y+108,`italic 500 22px ${SERIF}`,th.sub,'center',{shadow:['rgba(0,0,0,.7)',8]});
+}
+function soCard(X,Y,w,th){
+  const h=118;x.save();x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=20;x.fillStyle=th.bg;rr(X,Y,w,h,16);x.fill();x.restore();
+  x.strokeStyle=th.border;x.lineWidth=1.6;rr(X,Y,w,h,16);x.stroke();
+  if(th.seal){x.fillStyle='#b3261e';x.beginPath();x.arc(X+w-26,Y+26,15,0,7);x.fill();txt('安',X+w-26,Y+33,'800 17px serif','#ffe9c2');}
+  txt('📜 SỚ CẦU AN',X+16,Y+28,`800 13px ${SANS}`,th.title,'left',{spacing:2});
+  txt('🙏 Anh Thư',X+16,Y+56,`800 20px ${SANS}`,th.name,'left');
+  txt('“Con xin cho ba mau',X+16,Y+82,`italic 500 16px ${SERIF}`,th.quote,'left');
+  txt('qua khỏi bệnh, an lành”',X+16,Y+103,`italic 500 16px ${SERIF}`,th.quote,'left');
+}
+function toast(X,Y,w,icon,l1,l2,th){
+  x.save();x.shadowColor=th.glow;x.shadowBlur=26;x.fillStyle=th.bg;rr(X,Y,w,70,35);x.fill();x.restore();
+  x.strokeStyle=th.border;x.lineWidth=2;rr(X,Y,w,70,35);x.stroke();
+  txt(icon,X+36,Y+46,'30px serif','#fff');
+  txt(l1,X+66,Y+31,`800 16px ${SANS}`,th.l1,'left');txt(l2,X+66,Y+54,`italic 500 14px ${SERIF}`,th.l2,'left');
+}
+function pill(cx,cy,t,th){x.font=`800 17px ${SANS}`;const w=x.measureText(t).width+44;
+  x.save();x.shadowColor='rgba(0,0,0,.45)';x.shadowBlur=14;x.fillStyle=th.bg;rr(cx-w/2,cy-19,w,38,19);x.fill();x.restore();
+  x.strokeStyle=th.border;x.lineWidth=1.6;rr(cx-w/2,cy-19,w,38,19);x.stroke();txt(t,cx,cy+6,`800 17px ${SANS}`,th.fg);}
+function bubble(X,Y,t,th){x.font=`700 15px ${SANS}`;const w=x.measureText(t).width+26;
+  x.fillStyle=th.bg;rr(X-w/2,Y-40,w,32,12);x.fill();x.beginPath();x.moveTo(X-7,Y-9);x.lineTo(X,Y);x.lineTo(X+7,Y-9);x.fill();
+  txt(t,X,Y-19,`700 15px ${SANS}`,th.fg);}
+function petal(len,wid){x.beginPath();x.moveTo(0,0);x.bezierCurveTo(wid,-len*.35,wid*.6,-len*.85,0,-len);x.bezierCurveTo(-wid*.6,-len*.85,-wid,-len*.35,0,0);}
+
+// =============== MẪU 1: ĐÊM HOA ĐĂNG ===============
+function hoaDang(cx,cy,s,name,rank){
+  x.save();x.translate(cx,cy);x.scale(s,s);
+  glow(0,-14,110,'rgba(255,190,120,.42)','rgba(255,140,80,0)');
+  x.fillStyle='rgba(255,205,150,.22)';x.beginPath();x.ellipse(0,30,74,11,0,0,7);x.fill();
+  x.fillStyle=lg(-56,0,56,0,[[0,'#174a30'],[.5,'#2f8a55'],[1,'#174a30']]);x.beginPath();x.ellipse(0,16,58,15,0,0,7);x.fill();
+  x.save();x.translate(0,12);
+  [-1.25,-.62,0,.62,1.25].forEach(a=>{x.save();x.rotate(a);x.fillStyle=lg(0,-60,0,0,[[0,rank?'#fff3c4':'#ffd9e6'],[1,rank?'#e0a12e':'#de4f86']]);petal(60,26);x.fill();x.restore();});
+  glow(0,-40,34,'rgba(255,245,200,1)','rgba(255,170,60,0)');
+  x.fillStyle='#fffbe6';x.beginPath();x.ellipse(0,-42,5,12,0,0,7);x.fill();
+  [-.9,-.3,.3,.9].forEach(a=>{x.save();x.rotate(a);x.fillStyle=lg(0,-44,0,0,[[0,rank?'#fffbe8':'#fff2f7'],[1,rank?'#f0b941':'#f07aa5']]);petal(44,20);x.fill();x.restore();});
+  x.restore();x.restore();
+  if(!name)return;
+  const fs=Math.round(11+6*s),label=(rank?'TOP '+rank+' · ':'')+name;x.font=`800 ${fs}px ${SANS}`;const tw=x.measureText(label).width+20,ly=cy+34*s+4;
+  x.fillStyle=rank?'rgba(70,38,0,.85)':'rgba(6,12,40,.72)';rr(cx-tw/2,ly,tw,fs+11,(fs+11)/2);x.fill();
+  x.strokeStyle=rank?'#ffd36b':'rgba(255,215,170,.45)';x.lineWidth=1.3;x.stroke();
+  txt(label,cx,ly+fs+3,`800 ${fs}px ${SANS}`,rank?'#ffe7a3':'#f1ecff');
+}
+function v1(){
+  x.fillStyle=lg(0,0,0,780,[[0,'#02051a'],[.55,'#0c1a4a'],[1,'#2a3a78']]);x.fillRect(0,0,W,780);
+  seed=3;for(let i=0;i<280;i++){const r=rnd()*1.5+.2;x.fillStyle=`rgba(255,250,230,${.25+rnd()*.75})`;x.beginPath();x.arc(rnd()*W,rnd()*740,r,0,7);x.fill();}
+  // trăng rằm
+  glow(360,420,520,'rgba(255,214,140,.38)','rgba(255,170,90,0)');
+  x.fillStyle=rg(330,380,0,230,[[0,'#fffef4'],[.7,'#fff0c6'],[1,'#ffd88a']]);x.beginPath();x.arc(360,420,218,0,7);x.fill();
+  x.save();x.beginPath();x.arc(360,420,218,0,7);x.clip();seed=9;
+  for(let i=0;i<16;i++){x.fillStyle='rgba(214,170,100,.13)';x.beginPath();x.arc(360+(rnd()-.5)*340,420+(rnd()-.5)*340,10+rnd()*40,0,7);x.fill();}x.restore();
+  // dãy núi xa
+  const ridge=(y,amp,col,sd)=>{seed=sd;x.fillStyle=col;x.beginPath();x.moveTo(0,782);for(let px=0;px<=W;px+=18)x.lineTo(px,y-Math.abs(Math.sin(px/95+sd))*amp-rnd()*10);x.lineTo(W,782);x.closePath();x.fill();};
+  ridge(735,95,'#18245a',2);ridge(768,55,'#0c1538',5);
+  // mặt hồ
+  x.fillStyle=lg(0,780,0,H,[[0,'#1e2c66'],[.18,'#0c1742'],[1,'#02040f']]);x.fillRect(0,780,W,H-780);
+  seed=21;for(let i=0;i<70;i++){const yy=784+i*i*.11;if(yy>H)break;const wd=(60+i*4)*(.5+rnd()*.7);x.fillStyle=`rgba(255,222,150,${Math.max(.04,.38-i*.006)})`;x.fillRect(360-wd/2+(rnd()-.5)*40,yy,wd,1.5+i*.05);}
+  x.fillStyle=lg(0,774,0,792,[[0,'rgba(255,220,160,0)'],[.5,'rgba(255,220,160,.45)'],[1,'rgba(255,220,160,0)']]);x.fillRect(0,774,W,18);
+  for(const [r,a] of [[120,.35],[175,.22],[240,.14]]){x.strokeStyle=`rgba(255,230,180,${a})`;x.lineWidth=1.6;x.beginPath();x.ellipse(360,806,r,r*.13,0,0,7);x.stroke();}
+  statue(360,806,560,{reflect:true,halo:'rgba(255,225,150,1)',blur:55});
+  // lá sen quanh chân tượng
+  [[225,812,46],[500,816,52],[160,830,34],[575,834,30]].forEach(([lx,ly,r])=>{x.fillStyle=lg(lx-r,0,lx+r,0,[[0,'#123d27'],[.5,'#2a7a4b'],[1,'#123d27']]);x.beginPath();x.ellipse(lx,ly,r,r*.22,0,.15,Math.PI*2-.15);x.lineTo(lx,ly);x.fill();});
+  // đom đóm
+  seed=40;for(let i=0;i<34;i++){const fx=rnd()*W,fy=480+rnd()*560;glow(fx,fy,7+rnd()*6,'rgba(255,240,170,.95)','rgba(255,220,120,0)');}
+  // hoa đăng = Phật tử
+  const N=['Văn Lợi',null,'Đức Huy','Gia Bảo','Như Ý','Hồng Nhung','Tuấn Kiệt','Diễm My','Thu Hà','Quang Minh','Yến Nhi','Bảo Ngọc'];
+  [[60,862,.48],[172,872,.5],[548,872,.5],[660,862,.48],[86,955,.62],[222,968,.64],[498,968,.64],[634,955,.62],[100,1062,.78],[620,1062,.78],[262,1080,.8],[458,1080,.8]]
+    .forEach(([hx,hy,s],i)=>hoaDang(hx,hy,s,N[i]));
+  hoaDang(150,1168,1.0,'Minh Anh',2);hoaDang(570,1168,1.0,'Thảo My',3);hoaDang(360,1188,1.15,'Bảo Ngọc',1);
+  title('✦  ĐÊM HOA ĐĂNG CẦU AN  ✦',70,{accent:'#ffe2a6',shadow:'rgba(255,200,110,.7)',stroke:'#2a1a40',sub:'#fff1d0'});
+  soCard(20,470,236,{bg:'rgba(8,16,52,.78)',border:'rgba(255,214,140,.75)',title:'#ffd98a',name:'#ffffff',quote:'#ffe9c4'});
+  toast(440,600,272,'🪷','Minh Anh thả 5 hoa đăng','Nguyện gia đạo bình an',{bg:'rgba(70,24,60,.85)',border:'#ffb3cf',glow:'rgba(255,140,190,.8)',l1:'#fff',l2:'#ffd9e8'});
+  bubble(222,935,'Nam mô A Di Đà Phật 🙏',{bg:'rgba(255,248,232,.95)',fg:'#4a2a10'});
+  pill(360,224,'🙏 12.486 lượt niệm Phật  ·  🪷 1.204 hoa đăng',{bg:'rgba(6,12,40,.82)',border:'#ffd36b',fg:'#ffe7a3'});
+}
+
+// =============== MẪU 2: KIM QUANG ĐẠI BI ===============
+function mandala(cx,cy){
+  x.save();x.translate(cx,cy);const G='rgba(255,205,110,';
+  for(let i=0;i<900;i++){const a=i*2.39996,r=10*Math.sqrt(i);if(r>286)break;x.fillStyle=G+(.12+.4*(1-r/286))+')';x.beginPath();x.arc(Math.cos(a)*r,Math.sin(a)*r,1.5,0,7);x.fill();}
+  const ring=(r,w,a)=>{x.strokeStyle=G+a+')';x.lineWidth=w;x.beginPath();x.arc(0,0,r,0,7);x.stroke();};
+  ring(312,3,.9);ring(300,1,.6);ring(236,1.6,.65);ring(224,1,.4);ring(150,1,.35);
+  for(let i=0;i<40;i++){x.save();x.rotate(i*Math.PI*2/40);x.strokeStyle=G+'.8)';x.lineWidth=1.6;x.beginPath();x.moveTo(-15,-238);x.quadraticCurveTo(-15,-282,0,-298);x.quadraticCurveTo(15,-282,15,-238);x.stroke();
+    x.fillStyle=G+'.95)';x.beginPath();x.arc(0,-306,2.6,0,7);x.fill();x.restore();}
+  for(let i=0;i<96;i++){const a=i*Math.PI*2/96;x.fillStyle=G+'.85)';x.beginPath();x.arc(Math.cos(a)*230,Math.sin(a)*230,1.8,0,7);x.fill();}
+  for(let i=0;i<16;i++){x.save();x.rotate(i*Math.PI/8);x.fillStyle=G+'.09)';x.strokeStyle=G+'.55)';x.lineWidth=1.3;x.translate(0,-150);x.rotate(Math.PI);x.scale(1,-1);petal(72,34);x.fill();x.stroke();x.restore();}
+  x.restore();
+}
+function goldLotus(cx,by,hw){
+  // 3 lớp cánh, lớp sau to & nghiêng nhiều, lớp trước nhỏ & đứng thẳng -> dáng đài sen khép
+  [[hw,84,11,'#6a3e08','#e9b545',.75],[hw*.78,74,9,'#8e5a10','#ffd977',.5],[hw*.5,62,7,'#b07818','#fff1c2',.3]].forEach(([w,len,n,c0,c1,tilt],li)=>{
+    for(let i=0;i<n;i++){const t=(i/(n-1))*2-1;x.save();x.translate(cx+t*w*.8,by+li*8-Math.cos(t*1.2)*6);x.rotate(t*tilt);
+      x.fillStyle=lg(0,-len,0,0,[[0,c1],[.7,c0],[1,'#3a2004']]);petal(len,len*.62);x.fill();x.strokeStyle='rgba(255,240,190,.8)';x.lineWidth=1.3;x.stroke();
+      x.strokeStyle='rgba(255,236,170,.35)';x.lineWidth=1;x.beginPath();x.moveTo(0,-4);x.lineTo(0,-len*.85);x.stroke();x.restore();}});
+}
+function medal(cx,cy,r,name,rank){
+  if(rank)glow(cx,cy,r*2,'rgba(255,200,90,.5)','rgba(255,160,40,0)');
+  x.fillStyle=rg(cx,cy-r*.3,0,r,[[0,rank?'#6a3a08':'#2c1b0c'],[1,rank?'#2a1402':'#120a04']]);x.beginPath();x.arc(cx,cy,r,0,7);x.fill();
+  x.lineWidth=rank?4:2.4;x.strokeStyle=rank?lg(cx,cy-r,cx,cy+r,[[0,'#fff2bd'],[.5,'#dca233'],[1,'#fff2bd']]):'#a8823f';x.stroke();
+  txt(name[0],cx,cy+r*.36,`800 ${Math.round(r*.95)}px ${SERIF}`,rank?GOLD(cy-r,cy+r):'#e6cb93');
+  if(rank){x.fillStyle='#c0261b';x.beginPath();x.arc(cx+r*.74,cy-r*.74,13,0,7);x.fill();x.strokeStyle='#ffd36b';x.lineWidth=1.6;x.stroke();txt(String(rank),cx+r*.74,cy-r*.74+5,`800 14px ${SANS}`,'#fff');}
+  txt(name,cx,cy+r+19,`800 ${rank?15:13}px ${SANS}`,rank?'#ffe3a0':'#e6d9c2','center',{shadow:['#000',5]});
+}
+function cauDoi(X,words){
+  x.save();x.shadowColor='rgba(0,0,0,.6)';x.shadowBlur=16;x.fillStyle=lg(X-26,0,X+26,0,[[0,'#3a0805'],[.5,'#6e130b'],[1,'#3a0805']]);rr(X-26,250,52,560,8);x.fill();x.restore();
+  x.strokeStyle='#d9a441';x.lineWidth=2;rr(X-26,250,52,560,8);x.stroke();x.strokeStyle='rgba(255,220,140,.4)';x.lineWidth=1;rr(X-20,256,40,548,5);x.stroke();
+  const step=548/words.length;words.forEach((w,i)=>txt(w,X,256+step*(i+.5)+9,`800 ${w.length>3?17:21}px ${SERIF}`,GOLD(256+step*i,256+step*(i+1))));
+}
+function v2(){
+  x.fillStyle=rg(360,470,0,820,[[0,'#5a2d08'],[.42,'#1e0e03'],[1,'#040201']]);x.fillRect(0,0,W,H);
+  x.save();x.translate(360,470);for(let i=0;i<28;i++){x.rotate(Math.PI*2/28);x.fillStyle=`rgba(255,200,100,${i%2?.04:.085})`;x.beginPath();x.moveTo(0,0);x.lineTo(-46,-1000);x.lineTo(46,-1000);x.closePath();x.fill();}x.restore();
+  mandala(360,470);
+  glow(360,470,250,'rgba(255,220,140,.35)','rgba(255,170,60,0)');
+  glow(360,402,96,'rgba(255,248,215,.95)','rgba(255,190,80,0)');
+  x.strokeStyle='rgba(255,236,170,.9)';x.lineWidth=2.5;x.beginPath();x.arc(360,402,72,0,7);x.stroke();
+  statue(360,905,600,{halo:'rgba(255,200,90,1)',blur:50});
+  goldLotus(360,960,220);
+  cauDoi(40,['NAM','MÔ','ĐẠI','BI']);cauDoi(680,['QUÁN','THẾ','ÂM','BỒ','TÁT']);
+  // vòng cung Phật tử: hàng đầu = Top 6 công đức
+  const arc=(n,y0,k,x0,x1)=>Array.from({length:n},(_,i)=>{const px=x0+(x1-x0)*i/(n-1);return [px,y0-(px-360)**2/k];});
+  const TOP=['Bảo Ngọc','Minh Anh','Thảo My','Gia Huy','Kim Ngân','Đức Tài'];
+  arc(6,1050,1500,70,650).forEach(([px,py],i)=>medal(px,py,33,TOP[i],[5,3,1,2,4,6][i]));
+  const R2=['Văn Lợi','Như Ý','Hồng Nhung','Tuấn Kiệt','Diễm My','Thu Hà','Quang Minh'];
+  arc(7,1170,2200,50,670).forEach(([px,py],i)=>medal(px,py,25,R2[i]));
+  title('✦  KIM QUANG ĐẠI BI  ✦',58,{accent:'#ffd98a',shadow:'rgba(255,190,80,.85)',stroke:'#2a1200',sub:'#ffe9c0'});
+  soCard(76,676,214,{bg:'rgba(30,14,3,.85)',border:'#e0a83a',title:'#ffcf6b',name:'#fff4dc',quote:'#ffe2b0'});
+  bubble(560,700,'Nam mô Quán Thế Âm 🙏',{bg:'rgba(255,244,214,.96)',fg:'#5a3206'});
+  toast(110,212,500,'🔔','Bảo Ngọc thỉnh Đại Hồng Chung','Nguyện cho quý Phật tử bình an, vạn sự như ý',{bg:'rgba(60,24,2,.9)',border:'#ffd36b',glow:'rgba(255,190,70,.9)',l1:'#ffe7a3',l2:'#fff1d6'});
+  pill(360,1250,'🙏 12.486 lượt niệm Phật  ·  ✨ 58,2K công đức',{bg:'rgba(30,14,3,.9)',border:'#e0a83a',fg:'#ffe3a0'});
+}
+
+// =============== MẪU 3: PHỔ ĐÀ BÌNH MINH ===============
+function cloud(cx,cy,s,top,bot,edge){
+  x.save();x.translate(cx,cy);x.scale(s,s);
+  const P=[[-96,14,36],[-58,-10,46],[-6,-26,56],[50,-12,46],[94,12,36],[-30,18,40],[34,20,38]];
+  x.fillStyle=lg(0,-80,0,50,[[0,top],[1,bot]]);P.forEach(([px,py,r])=>{x.beginPath();x.arc(px,py,r,0,7);x.fill();});
+  x.beginPath();x.ellipse(0,30,120,22,0,0,7);x.fill();
+  if(edge){x.strokeStyle=edge;x.lineWidth=2.2;[[-58,-10,46],[-6,-26,56],[50,-12,46]].forEach(([px,py,r])=>{x.beginPath();x.arc(px,py,r*.5,Math.PI*.85,Math.PI*2.15);x.stroke();x.beginPath();x.arc(px+r*.12,py+r*.05,r*.22,Math.PI,Math.PI*2.4);x.stroke();});}
+  x.restore();
+}
+function crane(cx,cy,s,flip){
+  x.save();x.translate(cx,cy);x.scale(flip?-s:s,s);x.fillStyle='#fffaf1';x.strokeStyle='#fffaf1';
+  x.beginPath();x.ellipse(0,0,28,8,-.08,0,7);x.fill();
+  x.lineWidth=3.5;x.beginPath();x.moveTo(22,-3);x.quadraticCurveTo(42,-10,56,-7);x.stroke();
+  x.fillStyle='#c0261b';x.beginPath();x.arc(56,-8,3,0,7);x.fill();
+  x.strokeStyle='#3a3a3a';x.lineWidth=2.2;x.beginPath();x.moveTo(58,-7);x.lineTo(72,-4);x.stroke();
+  x.lineWidth=1.6;x.beginPath();x.moveTo(-24,2);x.lineTo(-64,9);x.moveTo(-24,4);x.lineTo(-62,13);x.stroke();
+  x.fillStyle='#fffaf1';
+  x.beginPath();x.moveTo(-8,-4);x.bezierCurveTo(-22,-44,-54,-66,-80,-70);x.bezierCurveTo(-56,-44,-34,-20,8,-4);x.fill();
+  x.beginPath();x.moveTo(-2,-3);x.bezierCurveTo(8,-44,30,-72,48,-82);x.bezierCurveTo(34,-48,24,-20,12,-3);x.fill();
+  x.fillStyle='#2a2a2a';x.beginPath();x.moveTo(-80,-70);x.quadraticCurveTo(-64,-58,-56,-50);x.lineTo(-66,-62);x.fill();
+  x.beginPath();x.moveTo(48,-82);x.quadraticCurveTo(42,-66,38,-58);x.lineTo(44,-70);x.fill();
+  x.restore();
+}
+function lantern(cx,cy,s,name,rank){
+  x.save();x.translate(cx,cy);x.scale(s,s);
+  glow(0,36,78,rank?'rgba(255,215,110,.55)':'rgba(255,100,60,.38)','rgba(255,90,40,0)');
+  x.strokeStyle='#5a2a10';x.lineWidth=1.5;x.beginPath();x.moveTo(0,-10);x.lineTo(0,2);x.stroke();
+  x.fillStyle='#d9a441';x.fillRect(-15,0,30,7);x.fillRect(-15,62,30,7);
+  x.fillStyle=rank?lg(-32,0,32,0,[[0,'#a87010'],[.5,'#ffe593'],[1,'#a87010']]):lg(-32,0,32,0,[[0,'#8a0d0d'],[.5,'#ff4b35'],[1,'#8a0d0d']]);
+  x.beginPath();x.ellipse(0,35,32,29,0,0,7);x.fill();
+  x.strokeStyle=rank?'rgba(120,70,0,.45)':'rgba(110,0,0,.45)';x.lineWidth=1.2;[11,22].forEach(rx=>{x.beginPath();x.ellipse(0,35,rx,29,0,0,7);x.stroke();});
+  x.strokeStyle=rank?'#c0261b':'#ffcc4a';x.lineWidth=2;for(let k=-4;k<=4;k+=2){x.beginPath();x.moveTo(k,69);x.lineTo(k*1.5,94);x.stroke();}
+  txt('安',0,45,'800 26px serif',rank?'#8a1a0a':'#ffe08a');
+  x.restore();
+  if(!name)return;
+  const fs=Math.round(10+5*s),label=(rank?rank+'. ':'')+name;x.font=`800 ${fs}px ${SANS}`;const tw=x.measureText(label).width+16,ly=cy+97*s;
+  x.fillStyle=rank?'rgba(120,20,10,.9)':'rgba(255,250,240,.88)';rr(cx-tw/2,ly,tw,fs+10,(fs+10)/2);x.fill();
+  if(rank){x.strokeStyle='#ffd36b';x.lineWidth=1.3;x.stroke();}
+  txt(label,cx,ly+fs+2,`800 ${fs}px ${SANS}`,rank?'#ffe7a3':'#7a1a0a');
+}
+function v3(){
+  x.fillStyle=lg(0,0,0,960,[[0,'#1d2763'],[.3,'#5a4796'],[.55,'#e0828f'],[.75,'#ffb98a'],[1,'#ffe3b0']]);x.fillRect(0,0,W,H);
+  seed=5;for(let i=0;i<70;i++){x.fillStyle=`rgba(255,255,255,${.2+rnd()*.6})`;x.beginPath();x.arc(rnd()*W,rnd()*260,rnd()*1.3+.2,0,7);x.fill();}
+  x.save();x.translate(360,470);for(let i=0;i<40;i++){x.rotate(Math.PI*2/40);x.fillStyle=`rgba(255,240,210,${i%2?.05:.1})`;x.beginPath();x.moveTo(0,0);x.lineTo(-30,-900);x.lineTo(30,-900);x.closePath();x.fill();}x.restore();
+  glow(360,470,560,'rgba(255,232,180,.75)','rgba(255,170,120,0)');
+  glow(360,450,200,'rgba(255,255,240,1)','rgba(255,214,150,0)');
+  // núi Phổ Đà nhô khỏi mây
+  const peak=(px,py,w,col)=>{x.fillStyle=lg(0,py,0,900,[[0,col],[1,'rgba(255,190,170,.25)']]);x.beginPath();x.moveTo(px-w,900);x.quadraticCurveTo(px-w*.35,py+40,px,py);x.quadraticCurveTo(px+w*.3,py+50,px+w,900);x.closePath();x.fill();};
+  peak(70,560,190,'rgba(120,90,150,.55)');peak(660,520,210,'rgba(120,90,150,.55)');peak(150,660,170,'rgba(90,60,120,.7)');peak(590,640,180,'rgba(90,60,120,.7)');
+  cloud(110,770,1.3,'#fff3f0','#f3b6b0');cloud(620,760,1.4,'#fff3f0','#f3b6b0');
+  statue(360,870,580,{halo:'rgba(255,250,225,1)',blur:50});
+  cloud(250,880,1.05,'#ffffff','#f7c6b5','rgba(214,150,70,.8)');cloud(480,888,1.1,'#ffffff','#f7c6b5','rgba(214,150,70,.8)');cloud(360,912,1.35,'#ffffff','#f9d2bf','rgba(214,150,70,.8)');
+  crane(560,300,.75,true);crane(640,370,.55,true);crane(120,330,.6,false);
+  // mây tiền cảnh
+  cloud(90,1120,2.0,'#fff6f0','#f0b7a8');cloud(630,1090,2.1,'#fff6f0','#f0b7a8');cloud(360,1250,2.6,'#fffaf5','#f5c4b4');
+  // dây đèn lồng = Phật tử
+  const string=(y0,sag,n,x0,x1)=>{x.strokeStyle='rgba(120,40,20,.85)';x.lineWidth=2;x.beginPath();for(let px=0;px<=W;px+=10){const py=y0+sag*(1-((px-360)/400)**2);px?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();
+    return Array.from({length:n},(_,i)=>{const px=x0+(x1-x0)*i/(n-1);return [px,y0+sag*(1-((px-360)/400)**2)];});};
+  const TOP=['Gia Huy','Minh Anh','Bảo Ngọc','Thảo My','Kim Ngân','Đức Tài'];
+  string(915,36,6,62,658).forEach(([px,py],i)=>lantern(px,py,i==2?1.12:1.0,TOP[i],[4,2,1,3,5,6][i]));
+  const R2=['Văn Lợi','Như Ý','Hồng Nhung','Tuấn Kiệt','Diễm My','Thu Hà','Quang Minh'];
+  string(1066,26,7,48,672).forEach(([px,py],i)=>lantern(px,py,.74,R2[i]));
+  const R3=['Yến Nhi','Hải Đăng','Cẩm Tú','Trọng Nghĩa','Mai Phương','Hữu Phước'];
+  string(1176,18,6,100,620).forEach(([px,py],i)=>lantern(px,py,.64,R3[i]));
+  title('✦  PHỔ ĐÀ BÌNH MINH  ✦',56,{accent:'#fff1d6',shadow:'rgba(255,170,120,.9)',stroke:'#5a1a2a',sub:'#fff6e6'});
+  pill(360,214,'🙏 12.486 lượt niệm Phật  ·  🏮 846 đèn cầu an',{bg:'rgba(110,20,30,.82)',border:'#ffd36b',fg:'#ffe7a3'});
+  soCard(474,560,232,{bg:'rgba(255,246,228,.94)',border:'#c8902a',title:'#a3261b',name:'#5a1a0a',quote:'#6a3a1a',seal:true});
+  toast(14,520,274,'🏮','Thảo My treo 3 đèn lồng','Cầu cho mẹ khoẻ mạnh',{bg:'rgba(130,18,22,.9)',border:'#ffd36b',glow:'rgba(255,120,80,.85)',l1:'#fff',l2:'#ffe2c4'});
+  bubble(200,900,'Nam mô A Di Đà Phật 🙏',{bg:'rgba(255,255,255,.96)',fg:'#7a1a0a'});
+}
+
+const sample='ÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬĐÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴàáảãạăằắẳẵặâầấẩẫậđèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ';
+Promise.all([
+  document.fonts.load(`800 60px "Playfair Display"`,sample),document.fonts.load(`italic 500 20px "Playfair Display"`,sample),
+  document.fonts.load(`800 16px "Be Vietnam Pro"`,sample),document.fonts.load(`700 16px "Be Vietnam Pro"`,sample),
+  new Promise(r=>{IMG.onload=r;IMG.onerror=r;})
+]).catch(()=>{}).then(()=>{[v1,v2,v3][V-1]();document.title='done';});
+</script>
+</body></html>
