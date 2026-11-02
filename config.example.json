@@ -13,7 +13,7 @@
     "youtube": {
       "enabled": true,
       "demo": true,
-      "channelId": "UCxxxxxxxxxxxxxxxxxxxxxx"
+      "handle": "@ten_kenh_youtube"
     },
     "facebook": {
       "enabled": true,
