@@ -309,7 +309,7 @@ function handle(m){
       if (m.niem) { S.bows.set(m.id,t); mo(); const p=seatPosOf(m.id); if(p&&Math.random()<.5) S.floats.push({t,x:p.x,y:p.y-30,text:'+1 🙏',size:16}); }
       if (m.text) { S.bubbles.set(m.id,{text:m.text,t}); if(!m.niem) S.wish={name:m.name,text:m.text,t}; }
       break;
-    case 'like': S.likeBoost += Math.min(m.count,10); break;
+    case 'like': { S.likeBoost += Math.min(m.count,10); const p=seatPosOf(m.id); if(p&&Math.random()<.6) S.floats.push({t,x:p.x,y:p.y-30,text:'❤️ +'+m.count,size:18}); break; }
     case 'gift': {
       const p = seatPosOf(m.id) || {x:QX,y:900,s:1};
       S.floats.push({t,x:p.x,y:p.y-30,text:'+'+m.points+' Công Đức',size:22});
