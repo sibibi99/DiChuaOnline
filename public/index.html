@@ -229,6 +229,7 @@ function bowOf(id,t){const b=S.bows.get(id);if(!b)return 0;const k=(t-b)/1400;if
 
 // ---------------- âm thanh ----------------
 let AC, master, bgGain, voiceGain;
+let BGM;
 function audioInit(){
   if (AC) return; AC = new (window.AudioContext||window.webkitAudioContext)();
   master = AC.createGain(); master.gain.value = .8; master.connect(AC.destination);
@@ -241,6 +242,11 @@ function audioInit(){
   let next = AC.currentTime + .5; setInterval(()=>{ while(next < AC.currentTime + .6){ moAt(next,.35); next += 1.15; } }, 200);
   // chuông nhỏ mỗi ~16 giây
   setInterval(()=>bell(.07, 523), 16000);
+  // nhạc nền lặp (Án Ma Ni Bát Di Hồng): public/audio/nen.mp3, phát dạng luồng (file dài, không giải mã cả bài vào RAM);
+  // đi qua bgGain nên tự nhỏ lại khi giọng đọc phát
+  BGM = new Audio('/audio/nen.mp3'); BGM.loop = true;
+  const bs = AC.createMediaElementSource(BGM), bg2 = AC.createGain(); bg2.gain.value = .8; bs.connect(bg2); bg2.connect(bgGain);
+  BGM.play().catch(()=>{});
   if (AC.state === 'suspended') document.getElementById('tap').style.display = 'flex';
 }
 function moAt(when, vol){
@@ -303,7 +309,7 @@ function handle(m){
   }
 }
 
-document.getElementById('tap').onclick = () => { AC && AC.resume(); document.getElementById('tap').style.display='none'; };
+document.getElementById('tap').onclick = () => { AC && AC.resume(); BGM && BGM.play().catch(()=>{}); document.getElementById('tap').style.display='none'; };
 buildStatic(); audioInit(); connect(); requestAnimationFrame(frame);
 // font Google (có chữ Việt) tải xong thì vẽ lại lớp tĩnh
 const VN='ÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬĐÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴàáảãạăằắẳẵặâầấẩẫậđèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ';

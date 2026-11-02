@@ -4,3 +4,6 @@ config.json
 thu-giong-vbee.*
 demo-out/
 *.log
+
+# nhạc nền overlay (file lớn, chép tay khi cài máy mới)
+public/audio/
