@@ -45,7 +45,8 @@ module.exports = function startTikTok(room, opt) {
   let timer;
   function later() {
     clearTimeout(timer); try { conn?.disconnect(); } catch {}
-    timer = setTimeout(connect, retry); retry = Math.min(retry * 2, 120000);
+    // tối đa 30 giây: vừa bật live là overlay nhận bình luận / tim gần như ngay
+    timer = setTimeout(connect, retry); retry = Math.min(retry * 2, 30000);
   }
   // Tắt live rồi mở lại thì TikTok cấp phòng mới nhưng không phải lúc nào cũng báo STREAM_END
   // -> mỗi phút dò room id hiện tại, khác phòng đang nghe thì nối lại ngay.

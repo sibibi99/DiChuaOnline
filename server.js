@@ -66,7 +66,8 @@ wss.on('connection', (ws, req) => {
   room.clients.add(ws);
   ws.send(JSON.stringify(room.snapshot()));
   setTimeout(() => room.voice.kick(), 1500);
-  ws.on('message', m => { try { const j = JSON.parse(m); if (j.t === 'spoken') room.voice.done(j.id); } catch {} });
+  ws.on('message', m => { try { const j = JSON.parse(m); if (j.t === 'spoken') room.voice.done(j.id);
+    if (j.t === 'hello') console.log(`[overlay] ${p} khung ${j.w}×${j.h} dpr ${j.dpr} → vẽ ${Math.round(720 * j.sc)}×${Math.round(1280 * j.sc)} | ${j.ua}`); } catch {} });
   ws.on('close', () => { room.clients.delete(ws); if (room.voice.playing) room.voice.done(); });
 });
 
