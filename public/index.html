@@ -143,7 +143,7 @@ function buildStatic(){
     // bảng trái: hướng dẫn
     const noEmoji = s => s.replace(/\p{Extended_Pictographic}️?\s?/gu, '');
     const rows = S.rituals.map(r => ({ icon: r.key, name: r.name, lines: wrap(noEmoji(r.hint || ''), PL.w-54, `600 11.5px ${SANS}`).slice(0,2) }));
-    if (S.stageMin) rows.push({ icon: 'qua', name: 'Lên chánh điện lạy Phật', lines: [S.stageMin > 1 ? `Tặng quà từ ${S.stageMin} ${UNIT}` : 'Tặng quà bất kỳ, 1 bông hồng cũng lên'] });
+    if (S.stageMin) rows.push({ icon: 'qua', name: 'Lên chánh điện lạy Phật', lines: [S.stageMin > 1 ? `Tặng bông hồng / quà từ ${S.stageMin} ${UNIT}` : 'Tặng quà bất kỳ, 1 bông hồng cũng lên'] });
     rows.push({ icon: 'sen', name: 'Niệm Phật cùng đại chúng', lines: ['Chat: Nam mô A Di Đà Phật'] });
     const hh = 44 + rows.reduce((a,r) => a + 22 + r.lines.length*15 + 6, 0);
     panel(PL.x,PL.y,PL.w,hh,'HƯỚNG DẪN LỄ PHẬT');
@@ -308,8 +308,11 @@ function inviteOne(t){
   const u = userOf(best.id); S.invited.set(u.id, t);
   S.stage.push({ id: u.id, name: u.name, avatar: u.avatar, count: 0, points: 0 });
 }
+// bông hồng: chen lên đầu hàng (sau những người tặng hồng đã chờ trước)
+function roseFirst(o){ const i=S.stage.findIndex(s=>!s.rose); S.stage.splice(i<0?S.stage.length:i,0,o); }
 function stageTick(t){
-  if (S.st && t - S.st.t0 > ST_END) { S.st = null; S.stNext = t + ST.gap; S.stEnd = t; }   // về toàn cảnh ít nhất 2,5 giây rồi mới mời người kế
+  // hàng chờ dài thì nghỉ ngắn giữa 2 lượt để người tặng được lên lạy sớm
+  if (S.st && t - S.st.t0 > ST_END) { S.st = null; S.stNext = t + (S.stage.length >= 2 ? 900 : ST.gap); S.stEnd = t; }   // về toàn cảnh ít nhất 2,5 giây rồi mới mời người kế
   if (!S.st && !S.stage.length && !S.que && !S.bellFx && t - S.stEnd > INVITE) { S.stEnd = t; inviteOne(t); }
   if (!S.st && !S.que && !S.bellFx && S.stage.length && t >= S.stNext) { S.st = { ...S.stage.shift(), t0: t }; bell(.09, 262); }
 }
@@ -429,7 +432,7 @@ function frame(){
   const TY=196;x.fillStyle=lg(0,TY,0,TY+28,[[0,'#7a1208'],[1,'#4a0904']]);x.fillRect(0,TY,W,28);
   x.strokeStyle='#e0aa48';x.lineWidth=1.5;x.beginPath();x.moveTo(0,TY+.5);x.lineTo(W,TY+.5);x.moveTo(0,TY+27.5);x.lineTo(W,TY+27.5);x.stroke();
   // câu hướng dẫn vào chánh điện luôn đứng đầu, rồi tới lời của chùa (config.ticker)
-  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   '+(S.stageMin>1?`Tặng quà từ ${S.stageMin} ${UNIT} để lên chánh điện lạy Phật   ✦   `:S.stageMin?'Tặng 1 bông hồng để lên chánh điện lạy Phật   ✦   ':'')+'Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   Chat “thắp đèn” · “cầu an” · “xin xăm” để làm pháp sự   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
+  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   '+(S.stageMin>1?`Tặng bông hồng hoặc quà từ ${S.stageMin} ${UNIT} để lên chánh điện lạy Phật   ✦   `:S.stageMin?'Tặng 1 bông hồng để lên chánh điện lạy Phật   ✦   ':'')+'Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   Chat “thắp đèn” · “cầu an” · “xin xăm” để làm pháp sự   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
   x.font='italic 600 15px '+SERIF;const tw=x.measureText(tk).width;const off=(t/26)%tw;
   for(let k=0;k<Math.ceil(W/tw)+1;k++)txt(tk,-off+k*tw,TY+19,'italic 600 15px '+SERIF,'#ffe7b0','left');
   drawBanner(t);
@@ -643,9 +646,11 @@ function handle(m){
     case 'gift': { const p=S.anchor.get(m.id); if(p) S.floats.push({t,x:p.x,y:p.y,text:'+'+m.points+' công đức',size:18}); S.bows.set(m.id,t);
       // xếp hàng lên chánh điện; người đã đang chờ (hoặc đang lên, chưa lạy) thì cộng dồn quà
       const q=(S.st&&S.st.id===m.id&&!S.st.fired)?S.st:S.stage.find(s=>s.id===m.id);
-      if (q) { q.count+=m.count; q.points+=m.points; q.gift=m.gift; }
+      if (q) { q.count+=m.count; q.points+=m.points; q.gift=m.gift; if (m.rose && q!==S.st && !q.rose) { q.rose=true; S.stage.splice(S.stage.indexOf(q),1); roseFirst(q); } }
+      else if (m.rose) roseFirst({id:m.id,name:m.name,avatar:m.avatar,gift:m.gift,count:m.count,points:m.points,rose:true});
       else if (m.stage!==false || stageQuiet(t)) { S.stage.push({id:m.id,name:m.name,avatar:m.avatar,gift:m.gift,count:m.count,points:m.points});
-        if (S.stage.length>15) S.stage.splice(S.stage.reduce((mi,s,i,a)=>s.points<a[mi].points?i:mi,0),1); }   // quá đông: bỏ người quà nhỏ nhất
+        const rest=S.stage.filter(s=>!s.rose);   // quá đông: bỏ người quà nhỏ nhất (không bỏ người tặng hồng)
+        if (S.stage.length>15 && rest.length) S.stage.splice(S.stage.indexOf(rest.reduce((mi,s)=>s.points<mi.points?s:mi)),1); }
       break; }
     case 'speak': speak(m); break;
   }
