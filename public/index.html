@@ -47,7 +47,7 @@ const DEF_RITUALS = [
 const S = { temple: 'CHÙA AN LẠC', ticker: '', seats: [], top: [], niem: 0, likes: 0, rituals: DEF_RITUALS,
   acts: new Map(), joins: new Map(), bows: new Map(), bubbles: new Map(), anchor: new Map(), hot: new Map(),
   floats: [], toasts: [], petals: [], sparks: [], lanterns: [], smoke: [], lampNew: 0, que: null, bellFx: null, bigQ: [], hearts: [], likeHit: 0, likeBoost: 0,
-  next: [], stage: [], st: null, stNext: 0 };
+  next: [], stage: [], st: null, stNext: 0, stEnd: performance.now(), active: new Map(), invited: new Map() };
 
 // ---------------- vẽ: công cụ ----------------
 function rr(a,b,w,h,q){x.beginPath();x.moveTo(a+q,b);x.arcTo(a+w,b,a+w,b+h,q);x.arcTo(a+w,b+h,a,b+h,q);x.arcTo(a,b+h,a,b,q);x.arcTo(a,b,a+w,b,q);x.closePath();}
@@ -293,8 +293,24 @@ const ST_ARR = ST.walk0 + (ST.y0 - ST.y1) / ST.v, ST_END0 = ST_ARR + ST.bows * 1
 function camK(t){ const s=S.st; if(!s) return 0; const e=t-s.t0; if(e<ST.zin) return ease(e/ST.zin); if(e<ST_END0) return 1; return 1-ease((e-ST_END0)/ST.out); }
 function camOn(k){ const z=1+(ZF.z-1)*k; x.translate(CX,ZF.y); x.scale(z,z); x.translate(-CX,-ZF.y); }
 function toScreen(p,k){ const z=1+(ZF.z-1)*k; return { x:CX+(p.x-CX)*z, y:ZF.y+(p.y-ZF.y)*z }; }
+// vắng: chánh điện trống ≥ 20 giây thì pháp sự bằng chat / chia sẻ / quà nhỏ cũng được lên; trống ≥ 75 giây thì mời người vừa tương tác lên lạy
+const QUIET = 20000, INVITE = 75000;
+const stageQuiet = t => !S.st && !S.stage.length && t - S.stEnd > QUIET;
+function inviteOne(t){
+  let best = null;
+  for (const [id, at] of S.active) {
+    if (t - at > 180000) { S.active.delete(id); continue; }
+    if (t - (S.invited.get(id) || -1e9) < 600000 || !userOf(id)) continue;   // mỗi người được mời tối đa 1 lần / 10 phút
+    if (!best || at > best.at) best = { id, at };
+  }
+  if (!best && S.top[0] && t - (S.invited.get(S.top[0].id) || -1e9) > 600000) best = { id: S.top[0].id };
+  if (!best) return;
+  const u = userOf(best.id); S.invited.set(u.id, t);
+  S.stage.push({ id: u.id, name: u.name, avatar: u.avatar, count: 0, points: 0 });
+}
 function stageTick(t){
-  if (S.st && t - S.st.t0 > ST_END) { S.st = null; S.stNext = t + ST.gap; }   // về toàn cảnh ít nhất 2,5 giây rồi mới mời người kế
+  if (S.st && t - S.st.t0 > ST_END) { S.st = null; S.stNext = t + ST.gap; S.stEnd = t; }   // về toàn cảnh ít nhất 2,5 giây rồi mới mời người kế
+  if (!S.st && !S.stage.length && !S.que && !S.bellFx && t - S.stEnd > INVITE) { S.stEnd = t; inviteOne(t); }
   if (!S.st && !S.que && !S.bellFx && S.stage.length && t >= S.stNext) { S.st = { ...S.stage.shift(), t0: t }; bell(.09, 262); }
 }
 // vẽ trong toạ độ cảnh (đang phóng)
@@ -329,9 +345,9 @@ function drawBanner(t){
   avatar(X0+46,Y0+h/2,30,{id:s.id,name:s.name,avatar:s.avatar},'#ffe27a');
   txt(s.name,X0+90,Y0+34,fitFont(s.name,w-110,26,SERIF,'800'),GOLD(Y0+12,Y0+36),'left',['#2a0a00',3]);
   const rn=s.rit&&(S.rituals.find(q=>q.key===s.rit.key)||{}).name;
-  const l2=`dâng ${s.gift}${s.count>1?' x'+s.count:''} · ${rn||'kính lễ Tam Bảo'}`;
+  const l2=s.gift?`dâng ${s.gift}${s.count>1?' x'+s.count:''} · ${rn||'kính lễ Tam Bảo'}`:`${rn||'thành tâm kính lễ Tam Bảo'}`;
   txt(l2,X0+90,Y0+59,fitFont(l2,w-110,17,SANS,'800'),'#ffe7a3','left');
-  const l3=`+${s.points.toLocaleString('vi-VN')} công đức · lên chánh điện lạy Phật`;
+  const l3=s.points?`+${s.points.toLocaleString('vi-VN')} công đức · lên chánh điện lạy Phật`:'Nam mô A Di Đà Phật · lên chánh điện lạy Phật';
   txt(l3,X0+90,Y0+80,fitFont(l3,w-110,13,SERIF,'italic 600'),'#f6d9a8','left');
   x.restore();
 }
@@ -578,6 +594,7 @@ function arrive(id,t){ // người mới có chỗ: đi dọc thảm vào chỗ 
 }
 function handle(m){
   const t = now();
+  if (m.id && (m.t==='chat'||m.t==='like'||m.t==='gift'||m.t==='ritual')) S.active.set(m.id,t);   // người vừa tương tác: ứng viên được mời lên chánh điện
   switch(m.t){
     case 'snapshot':
       Object.assign(S,{temple:m.temple||S.temple,ticker:m.ticker||'',seats:m.seats,top:m.top,next:m.next||[],niem:m.niem,likes:m.likes||0,stageMin:m.stageMin||0});
@@ -596,6 +613,8 @@ function handle(m){
         if (S.st&&S.st.id===m.id) { if(!S.st.fired) S.st.rit=m; else ritualFx(m,true); break; }
         const q=S.stage.find(s=>s.id===m.id); if (q) { q.rit=m; break; }
       }
+      // vắng khách: pháp sự bằng chat / chia sẻ / quà nhỏ cũng được lên chánh điện cho cảnh luôn có người lạy
+      if (stageQuiet(t)) { S.stage.push({id:m.id,name:m.name,avatar:m.avatar,count:0,points:0,rit:m}); break; }
       const a=S.acts.get(m.id);
       if (homeOf(m.id) && (!a || a.k==='join') && countActs('rit') < 3) startAct(m.id,'rit',{m});
       else { S.bows.set(m.id,t); ritualFx(m); }
@@ -617,7 +636,7 @@ function handle(m){
       // xếp hàng lên chánh điện; người đã đang chờ (hoặc đang lên, chưa lạy) thì cộng dồn quà
       const q=(S.st&&S.st.id===m.id&&!S.st.fired)?S.st:S.stage.find(s=>s.id===m.id);
       if (q) { q.count+=m.count; q.points+=m.points; q.gift=m.gift; }
-      else if (m.stage!==false) { S.stage.push({id:m.id,name:m.name,avatar:m.avatar,gift:m.gift,count:m.count,points:m.points});
+      else if (m.stage!==false || stageQuiet(t)) { S.stage.push({id:m.id,name:m.name,avatar:m.avatar,gift:m.gift,count:m.count,points:m.points});
         if (S.stage.length>15) S.stage.splice(S.stage.reduce((mi,s,i,a)=>s.points<a[mi].points?i:mi,0),1); }   // quá đông: bỏ người quà nhỏ nhất
       break; }
     case 'speak': speak(m); break;
