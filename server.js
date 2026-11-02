@@ -32,7 +32,10 @@ const server = http.createServer((req, res) => {
   if (seg.length === 1 && rooms[seg[0]]) return sendFile(res, path.join(__dirname, 'public', 'index.html'));
   if (seg[0] === 'voice' && seg[1] && /^[\w.]+$/.test(seg[1])) return sendFile(res, path.join(CACHE_DIR, seg[1]));
   // ảnh tĩnh của overlay (vd tượng Quan Âm): public/img/<file>
-  if (seg[0] === 'img' && seg[1] && /^[\w.-]+$/.test(seg[1])) return sendFile(res, path.join(__dirname, 'public', 'img', seg[1]));
+  if (seg[0] === 'img' && seg[1] && /^[\w.-]+$/.test(seg[1])) {
+    if (seg[1] === 'chanh-dien.jpg') console.log(`[overlay] ${new Date().toLocaleTimeString('vi-VN')} tải ảnh nền | ${(req.headers['user-agent'] || '').replace(/.*\) /, '').slice(0, 60)}`);
+    return sendFile(res, path.join(__dirname, 'public', 'img', seg[1]));
+  }
   // nhạc nền lặp của overlay: public/audio/<file>
   if (seg[0] === 'audio' && seg[1] && /^[\w.-]+$/.test(seg[1])) return sendFile(res, path.join(__dirname, 'public', 'audio', seg[1]));
   // Vbee gọi lại khi tạo xong (nếu vbee.webhookUrl trỏ về đây)
