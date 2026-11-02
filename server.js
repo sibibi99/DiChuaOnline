@@ -55,6 +55,7 @@ const server = http.createServer((req, res) => {
     if (seg[2] === 'gift') r.onGift(who, u.searchParams.get('gift') || 'Sư tử', 1, +(u.searchParams.get('coins') || 299));
     else if (seg[2] === 'like') r.onLike(who, +(u.searchParams.get('count') || 5));
     else if (seg[2] === 'share') r.onShare(who);
+    else if (seg[2] === 'seg') r.nextSeg();   // chuyển ngay sang khóa lễ kế (thử / người dẫn tự chuyển)
     else r.onChat(who, u.searchParams.get('text') || 'Nam mô A Di Đà Phật');
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('ok');
   }
