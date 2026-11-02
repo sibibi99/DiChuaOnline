@@ -19,6 +19,18 @@
 // Phật tử là huy hiệu vàng (Top 6 xếp vòng cung, 24 chỗ thường 3 hàng).
 const W = 720, H = 1280;
 const c = document.getElementById('c'); let x = c.getContext('2d');
+// Độ nét: vẽ theo độ phân giải thật của khung hiển thị (OBS / LIVE Studio thường 1080×1920 = 1,5×),
+// mọi toạ độ vẫn tính trên khung 720×1280. ?scale=2 để ép; trần 2 cho nhẹ máy.
+let SC = 1;
+function pickScale(){
+  const q = +new URLSearchParams(location.search).get('scale');
+  const v = q || Math.min(innerWidth / 720, innerHeight / 1280) * (window.devicePixelRatio || 1);
+  return Math.min(2, Math.max(1, Math.ceil(v * 4) / 4));
+}
+function applyScale(){ SC = pickScale(); c.width = 720 * SC; c.height = 1280 * SC; }
+applyScale();
+// vẽ lớp dựng sẵn (canvas phóng SC lần) đúng kích thước logic
+function blit(cv, X, Y){ x.drawImage(cv, X, Y, cv.width / SC, cv.height / SC); }
 const PLATFORM = location.pathname.split('/').filter(Boolean)[0] || 'tiktok';
 const SERIF = '"Playfair Display","DejaVu Serif","Noto Serif",serif', SANS = '"Be Vietnam Pro","DejaVu Sans","Noto Sans",Arial,sans-serif';
 const AV = ['#e57373','#64b5f6','#81c784','#ffb74d','#ba68c8','#4db6ac','#f06292','#a1887f'];
@@ -41,7 +53,7 @@ function txt(t,X,Y,font,fill,align='center',stroke,o={}){x.save();x.font=font;x.
   if(stroke){x.lineJoin='round';x.lineWidth=stroke[1];x.strokeStyle=stroke[0];x.strokeText(t,X,Y);}x.fillStyle=fill;x.fillText(t,X,Y);x.restore();}
 function fitFont(t,max,size,family,weight='bold'){let s=size;do{x.font=`${weight} ${s}px ${family}`;}while(x.measureText(t).width>max&&--s>8);return x.font;}
 function wrap(t,max,font){x.font=font;const ws=t.split(' ');const out=[];let cur='';for(const w of ws){const tt=cur?cur+' '+w:w;if(x.measureText(tt).width>max&&cur){out.push(cur);cur=w;}else cur=tt;}if(cur)out.push(cur);return out;}
-function layer(fn,w=W,h=H){const cv=document.createElement('canvas');cv.width=w;cv.height=h;const old=x;x=cv.getContext('2d');try{fn();}finally{x=old;}return cv;}
+function layer(fn,w=W,h=H){const cv=document.createElement('canvas');cv.width=Math.ceil(w*SC);cv.height=Math.ceil(h*SC);const old=x;x=cv.getContext('2d');x.scale(SC,SC);try{fn();}finally{x=old;}return cv;}
 function petal(len,wid){x.beginPath();x.moveTo(0,0);x.bezierCurveTo(wid,-len*.35,wid*.6,-len*.85,0,-len);x.bezierCurveTo(-wid*.6,-len*.85,-wid,-len*.35,0,0);}
 const short=(s,n)=>{const a=[...s];return a.length>n?a.slice(0,n-1).join('')+'…':s;};
 
@@ -149,24 +161,25 @@ function seatPosOf(id){
 
 function frame(){
   const t = now();
-  x.drawImage(BACK,0,0);
+  x.setTransform(SC,0,0,SC,0,0);
+  blit(BACK,0,0);
   // tia sáng xoay chậm
   x.save();x.translate(QX,MCY);x.rotate(t/90000);
   for(let i=0;i<28;i++){x.rotate(Math.PI*2/28);x.fillStyle=`rgba(255,200,100,${i%2?.035:.075})`;x.beginPath();x.moveTo(0,0);x.lineTo(-46,-1100);x.lineTo(46,-1100);x.closePath();x.fill();}x.restore();
   // mạn đà la: vòng ngoài xoay thuận, lõi xoay ngược
-  x.save();x.translate(QX,MCY);x.rotate(t/70000);x.drawImage(M_OUT,-320,-320);x.restore();
-  x.save();x.translate(QX,MCY);x.rotate(-t/45000);x.drawImage(M_IN,-320,-320);x.restore();
+  x.save();x.translate(QX,MCY);x.rotate(t/70000);blit(M_OUT,-320,-320);x.restore();
+  x.save();x.translate(QX,MCY);x.rotate(-t/45000);blit(M_IN,-320,-320);x.restore();
   const pulse = 1 + Math.sin(t/1400)*.04;
   glow(QX,MCY,250*pulse,'rgba(255,220,140,.32)','rgba(255,170,60,0)');
   // hào quang sau đầu tượng (thở nhẹ)
   glow(QX,HY,96*pulse,'rgba(255,248,215,.95)','rgba(255,190,80,0)');
   x.strokeStyle='rgba(255,236,170,.9)';x.lineWidth=2.5;x.beginPath();x.arc(QX,HY,72*pulse,0,7);x.stroke();
-  x.drawImage(MID,0,0);
+  blit(MID,0,0);
   // hạt vàng bay lên quanh tượng
   while(S.sparks.length<34)S.sparks.push({x:QX+(Math.random()-.5)*340,y:880-Math.random()*560,v:.25+Math.random()*.5,ph:Math.random()*6,r:1+Math.random()*2.2});
   S.sparks.forEach(p=>{p.y-=p.v;p.x+=Math.sin(t/900+p.ph)*.25;const a=.35+.65*Math.abs(Math.sin(t/500+p.ph));glow(p.x,p.y,p.r*4,`rgba(255,236,170,${a})`,'rgba(255,200,90,0)');});
   S.sparks=S.sparks.filter(p=>p.y>230);
-  x.drawImage(TOPL,0,0);
+  blit(TOPL,0,0);
   // dải chữ chạy dưới đài sen
   x.fillStyle='rgba(30,14,3,.86)';rr(QX-180,892,360,28,14);x.fill();x.strokeStyle='#d9a441';x.lineWidth=1.5;x.stroke();
   x.save();rr(QX-170,892,340,28,14);x.clip();
@@ -310,6 +323,8 @@ function handle(m){
 }
 
 document.getElementById('tap').onclick = () => { AC && AC.resume(); BGM && BGM.play().catch(()=>{}); document.getElementById('tap').style.display='none'; };
+// khung nguồn đổi cỡ (kéo trong OBS / LIVE Studio) -> chọn lại độ nét, dựng lại lớp tĩnh
+let rsT; addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { const s = pickScale(); if (s !== SC) { applyScale(); buildStatic(); } }, 300); });
 buildStatic(); audioInit(); connect(); requestAnimationFrame(frame);
 // font Google (có chữ Việt) tải xong thì vẽ lại lớp tĩnh
 const VN='ÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬĐÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴàáảãạăằắẳẵặâầấẩẫậđèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ';
