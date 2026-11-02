@@ -143,7 +143,7 @@ function buildStatic(){
     // bảng trái: hướng dẫn
     const noEmoji = s => s.replace(/\p{Extended_Pictographic}️?\s?/gu, '');
     const rows = S.rituals.map(r => ({ icon: r.key, name: r.name, lines: wrap(noEmoji(r.hint || ''), PL.w-54, `600 11.5px ${SANS}`).slice(0,2) }));
-    if (S.stageMin > 1) rows.push({ icon: 'qua', name: 'Lên chánh điện lạy Phật', lines: [`Tặng quà từ ${S.stageMin} ${UNIT}`] });
+    if (S.stageMin) rows.push({ icon: 'qua', name: 'Lên chánh điện lạy Phật', lines: [S.stageMin > 1 ? `Tặng quà từ ${S.stageMin} ${UNIT}` : 'Tặng quà bất kỳ, 1 bông hồng cũng lên'] });
     rows.push({ icon: 'sen', name: 'Niệm Phật cùng đại chúng', lines: ['Chat: Nam mô A Di Đà Phật'] });
     const hh = 44 + rows.reduce((a,r) => a + 22 + r.lines.length*15 + 6, 0);
     panel(PL.x,PL.y,PL.w,hh,'HƯỚNG DẪN LỄ PHẬT');
@@ -429,7 +429,7 @@ function frame(){
   const TY=196;x.fillStyle=lg(0,TY,0,TY+28,[[0,'#7a1208'],[1,'#4a0904']]);x.fillRect(0,TY,W,28);
   x.strokeStyle='#e0aa48';x.lineWidth=1.5;x.beginPath();x.moveTo(0,TY+.5);x.lineTo(W,TY+.5);x.moveTo(0,TY+27.5);x.lineTo(W,TY+27.5);x.stroke();
   // câu hướng dẫn vào chánh điện luôn đứng đầu, rồi tới lời của chùa (config.ticker)
-  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   '+(S.stageMin>1?`Tặng quà từ ${S.stageMin} ${UNIT} để lên chánh điện lạy Phật   ✦   `:'')+'Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   Chat “thắp đèn” · “cầu an” · “xin xăm” để làm pháp sự   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
+  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   '+(S.stageMin>1?`Tặng quà từ ${S.stageMin} ${UNIT} để lên chánh điện lạy Phật   ✦   `:S.stageMin?'Tặng 1 bông hồng để lên chánh điện lạy Phật   ✦   ':'')+'Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   Chat “thắp đèn” · “cầu an” · “xin xăm” để làm pháp sự   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
   x.font='italic 600 15px '+SERIF;const tw=x.measureText(tk).width;const off=(t/26)%tw;
   for(let k=0;k<Math.ceil(W/tw)+1;k++)txt(tk,-off+k*tw,TY+19,'italic 600 15px '+SERIF,'#ffe7b0','left');
   drawBanner(t);
@@ -613,6 +613,7 @@ function handle(m){
       // Top 1 mới: tiến lên chánh điện cùng 2 người theo hầu
       if (m.top[0] && m.top[0].id!==was) startAct(m.top[0].id,'join',{proc:true});
       break; }
+    case 'stagemin': S.stageMin=m.stageMin; buildStatic(); break;   // ngưỡng xu đổi theo độ đông
     case 'rituals': S.rituals=m.rituals; break;
     case 'ritual': {
       // pháp sự do tặng quà: làm lúc người đó lạy trên chánh điện

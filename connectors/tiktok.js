@@ -31,6 +31,8 @@ module.exports = function startTikTok(room, opt) {
       const name = d.gift?.name || d.giftDetails?.giftName || d.extendedGiftInfo?.name || 'quà';
       room.onGift(U(d), name, count, coin * count);
     });
+    // số người đang xem -> ngưỡng xu lên chánh điện (proto v3: total; bản cũ: viewerCount)
+    conn.on(WebcastEvent.ROOM_USER, d => room.onViewers(+(d.total ?? d.viewerCount ?? -1)));
     conn.on(WebcastEvent.STREAM_END, () => { console.log('[tiktok] live kết thúc'); later(); });
     conn.on(ControlEvent.DISCONNECTED, () => { console.log('[tiktok] mất kết nối'); later(); });
     try {

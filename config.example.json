@@ -4,7 +4,7 @@
   "templeSubtitle": "Cầu Bình An – Cầu Tài Lộc – Cầu May Mắn",
   "ticker": "Hữu duyên tương ngộ nơi cửa Phật, cầu cho tất cả chúng sinh được bình an, mạnh khỏe, vạn sự như ý.",
   "bigGiftCoins": 99,
-  "stageMinCoins": 10,
+  "stageTiers": [[0, 1], [40, 5], [100, 10], [200, 30]],
   "platforms": {
     "tiktok": {
       "enabled": true,
