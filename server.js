@@ -127,10 +127,21 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', (ws, req) => {
   const p = new URL(req.url, 'http://x').searchParams.get('p');
   const room = rooms[p]; if (!room) return ws.close();
-  room.clients.add(ws);
+  room.clients.add(ws); ws.at = Date.now();
+  // mở nhiều khung (LIVE Studio + trình duyệt xem thử) thì chỉ 1 khung phát giọng, tránh đọc 2 lần: ưu tiên LIVE Studio / OBS, rồi khung mở sau cùng
+  if (!room.voiceOne) {
+    room.voiceOne = true; const all = room.broadcast.bind(room);
+    room.broadcast = m => {
+      if (m.t !== 'speak') return all(m);
+      const live = [...room.clients].filter(c => c.readyState === 1), studio = live.filter(c => /TikTokLIVEStudio|OBS/i.test(c.ua || ''));
+      const pick = (studio.length ? studio : live).sort((a, b) => b.at - a.at)[0];
+      if (pick) pick.send(JSON.stringify(m));
+    };
+  }
   ws.send(JSON.stringify({ ...room.snapshot(), ver: uiVersion() }));   // khung cũ nối lại sau khi khởi động server → thấy khác bản → tự tải lại
   setTimeout(() => room.voice.kick(), 1500);
   ws.on('message', m => { try { const j = JSON.parse(m); if (j.t === 'spoken') room.voice.done(j.id);
+    if (j.t === 'hello') ws.ua = String(j.ua || '');
     if (j.t === 'hello') console.log(`[overlay] ${new Date().toLocaleTimeString('vi-VN')} ${p} khung ${j.w}×${j.h} dpr ${j.dpr} → vẽ ${Math.round(720 * j.sc)}×${Math.round(1280 * j.sc)} | bản ${j.ver || 'CŨ (cần tải lại tay 1 lần)'} | ${j.ua}`); } catch {} });
   ws.on('close', () => { room.clients.delete(ws); if (room.voice.playing) room.voice.done(); });
 });
