@@ -103,13 +103,23 @@ function shade(hex,k){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Ma
 // ---------------- bố cục (theo ảnh nền) ----------------
 const CX = 360;                                  // trục thảm đỏ (bậc thang + sân)
 const HALO = { x: 360, y: 440 };                 // hào quang sau đầu tượng Phật trong ảnh
-// đường viền tượng Phật trong ảnh (toạ độ cảnh): mọi hiệu ứng hào quang chỉ vẽ QUANH tượng, không phủ lên mặt / thân
-const STATUE = [[360,386],[384,391],[400,408],[407,438],[405,470],[398,500],[390,528],[392,552],[430,566],[458,585],[470,620],[482,660],[500,690],[512,700],[540,730],[540,790],
-  [180,790],[180,730],[208,700],[220,690],[238,660],[250,620],[262,585],[290,566],[328,552],[330,528],[322,500],[315,470],[313,438],[320,408],[336,391]];
-function behindStatue(fn, screen){
-  x.save(); x.beginPath(); x.rect(-400,-400,W+800,H+800);
-  STATUE.forEach(([a,b],i)=>{ const p=screen?toScreen({x:a,y:b}):{x:a,y:b}; i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y); }); x.closePath();
-  x.clip('evenodd'); try { fn(); } finally { x.restore(); }
+// mặt nạ mềm của tượng Phật (tách tự động từ chính ảnh nền, viền mờ dần): hiệu ứng hào quang vẽ ra lớp riêng,
+// khoét phần trùng tượng rồi mới chồng lên → sáng QUANH tượng, mặt / thân giữ nguyên nét, không lộ đường cắt
+const MASK = { img: new Image(), ok: false };
+MASK.img.onload = () => { MASK.ok = true; };
+MASK.img.src = '/img/tuong-mask.png?v=' + Date.now();
+const LY = document.createElement('canvas'), lx = LY.getContext('2d');
+function behindStatue(fn, screen, mode){
+  if (!MASK.ok) { fn(); return; }
+  if (LY.width !== c.width || LY.height !== c.height) { LY.width = c.width; LY.height = c.height; }
+  const main = x, T = main.getTransform();
+  lx.setTransform(1,0,0,1,0,0); lx.globalAlpha = 1; lx.globalCompositeOperation = 'source-over'; lx.clearRect(0,0,LY.width,LY.height);
+  lx.setTransform(T); x = lx;
+  try { lx.save(); fn(); lx.restore(); } finally { x = main; }
+  lx.save(); lx.globalCompositeOperation = 'destination-out'; lx.globalAlpha = 1; lx.setTransform(T);
+  if (screen) { lx.translate(CAM.sx,CAM.sy); lx.scale(CAM.z,CAM.z); lx.translate(-CAM.fx,-CAM.fy); }
+  lx.drawImage(MASK.img, 0, 0, W, H); lx.restore();
+  main.save(); main.setTransform(1,0,0,1,0,0); if (mode) main.globalCompositeOperation = mode; main.drawImage(LY, 0, 0); main.restore();
 }
 const LAND = 926;                                // chiếu nghỉ trên cùng bậc thang, ngay dưới lư hương
 const sc = y => .36 + (y - 1060) * .0008;        // tỉ lệ người: xa tượng nhỏ dần
@@ -589,7 +599,8 @@ function drawFx(t){
     const hs=toScreen(HALO);
     behindStatue(()=>{ x.save();x.globalCompositeOperation='lighter';x.translate(hs.x,hs.y);x.rotate(t/4000);
     for(let i=0;i<24;i++){x.rotate(Math.PI/12);x.fillStyle=`rgba(255,215,110,${i%2?.07:.15})`;x.beginPath();x.moveTo(0,0);x.lineTo(-60,-1500);x.lineTo(60,-1500);x.closePath();x.fill();}
-    x.restore(); glow(hs.x,hs.y,300,'rgba(255,230,150,.45)','rgba(255,200,90,0)'); }, true);
+    x.restore(); }, true, 'lighter');
+    behindStatue(()=>glow(hs.x,hs.y,300,'rgba(255,230,150,.45)','rgba(255,200,90,0)'), true);
     if(age<900){x.save();x.globalAlpha=a*(1-age/900)*.35;x.fillStyle='#fff3c0';x.fillRect(0,0,W,H);x.restore();}
     band('HÀO QUANG RỰC RỠ', f.crowd ? (f.viewers ? `${f.viewers.toLocaleString('vi-VN')} người cùng về chánh điện · cùng tĩnh tâm` : `Đại chúng về đông · ${f.joins} vị vừa vào chánh điện`)
       : 'Cảm ơn '+f.name+' đã ủng hộ kênh',a);
@@ -599,7 +610,7 @@ function drawFx(t){
   } else if(f.k==='seg'){   // đổi khóa lễ: chớp sáng + băng tên khóa mới
     if(age<800){x.save();x.globalAlpha=a*(1-age/800)*.5;x.fillStyle='#fff3d0';x.fillRect(0,0,W,H);x.restore();}
     { const hs=toScreen(HALO); behindStatue(()=>{ x.save();x.globalCompositeOperation='lighter';const e=Math.min(1,age/1800);glow(hs.x,hs.y,180+260*e,`rgba(255,214,120,${.5*(1-age/D)})`,'rgba(255,170,60,0)');
-    for(let k=0;k<3;k++){const r2=((age/7)+k*140)%420;x.strokeStyle=`rgba(255,236,170,${.6*(1-r2/420)})`;x.lineWidth=4;x.beginPath();x.arc(hs.x,hs.y,60+r2,0,7);x.stroke();}x.restore(); }, true); }
+    for(let k=0;k<3;k++){const r2=((age/7)+k*140)%420;x.strokeStyle=`rgba(255,236,170,${.6*(1-r2/420)})`;x.lineWidth=4;x.beginPath();x.arc(hs.x,hs.y,60+r2,0,7);x.stroke();}x.restore(); }, true, 'lighter'); }
     txt('✦  PHIÊN MỚI  ✦',CX,690,`800 15px ${SANS}`,'#ffd98a','center',['rgba(40,6,0,.9)',4],{spacing:5});
     band(f.name.toUpperCase(),f.sub||'',a);
     if(f.top&&f.top.length){const l='Cảm ơn đồng hành: '+f.top.join(' · ');x.fillStyle='rgba(40,6,0,.82)';rr(40,812,W-80,40,20);x.fill();
@@ -685,8 +696,8 @@ function segScene(t){
   if (k==='thien' && S.scene.cur==='hall') {
     x.fillStyle='rgba(0,2,12,.28)'; x.fillRect(-400,-400,W+800,H+800);
     const {b}=breath(t), r=78+80*b;
-    behindStatue(()=>{ x.save();x.globalCompositeOperation='lighter';glow(HALO.x,HALO.y,r*1.5,`rgba(255,220,140,${.12+.18*b})`,'rgba(255,200,90,0)');x.restore();
-    x.strokeStyle=`rgba(255,232,170,${.45+.35*b})`;x.lineWidth=3;x.beginPath();x.arc(HALO.x,HALO.y,r,0,7);x.stroke();
+    behindStatue(()=>glow(HALO.x,HALO.y,r*1.5,`rgba(255,220,140,${.12+.18*b})`,'rgba(255,200,90,0)'), false, 'lighter');
+    behindStatue(()=>{ x.strokeStyle=`rgba(255,232,170,${.45+.35*b})`;x.lineWidth=3;x.beginPath();x.arc(HALO.x,HALO.y,r,0,7);x.stroke();
     x.strokeStyle='rgba(255,232,170,.2)';x.lineWidth=1.5;x.beginPath();x.arc(HALO.x,HALO.y,r+12,0,7);x.stroke(); });
   }
   // giờ tụng niệm: cứ 9 giây cả chánh điện cùng lạy theo tiếng mõ
@@ -852,7 +863,7 @@ function drawHall(t){
   // vòng sáng tỏa ra khi bừng sáng
   if(sa<4000){const e=sa/4000;x.strokeStyle=`rgba(255,226,150,${.55*(1-e)})`;x.lineWidth=5*(1-e)+1;x.beginPath();x.arc(HALO.x,HALO.y,80+e*320,0,7);x.stroke();
     x.strokeStyle=`rgba(255,240,200,${.35*(1-e)})`;x.lineWidth=3;x.beginPath();x.arc(HALO.x,HALO.y,50+e*220,0,7);x.stroke();}
-  x.restore(); });
+  x.restore(); }, false, 'lighter');
   // khói trầm từ lư hương
   if (S.smoke.length < 14 && Math.random() < .08) S.smoke.push({ t, x: CX + (Math.random()-.5)*8, ph: Math.random()*6 });
   S.smoke = S.smoke.filter(p => t - p.t < 7000);
