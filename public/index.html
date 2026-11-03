@@ -47,7 +47,7 @@ const DEF_RITUALS = [
 const DEF_TITLES = [[1,'Sơ Tâm'],[10,'Tịnh Tâm'],[50,'An Nhiên'],[100,'Hoan Hỷ'],[300,'Tri Âm'],[1000,'Tri Âm Vàng']];
 const S = { temple: 'KHÔNG GIAN AN LẠC', ticker: '', seats: [], top: [], life: [], niem: 0, likes: 0, rituals: DEF_RITUALS,
   goal: { n: 0, target: 300 }, mo: 0, combo: { n: 0, t: -1e9 }, titles: DEF_TITLES, fx: null,
-  acts: new Map(), joins: new Map(), joinAt: new Map(), bows: new Map(), bubbles: new Map(), anchor: new Map(), hot: new Map(),
+  acts: new Map(), joins: new Map(), joinAt: new Map(), cranes: [], lotusUp: [], luAt: new Map(), wind: 0, bows: new Map(), bubbles: new Map(), anchor: new Map(), hot: new Map(),
   floats: [], toasts: [], petals: [], sparks: [], lanterns: [], smoke: [], lampNew: 0, que: null, bellFx: null, bigQ: [], hearts: [], likeHit: 0, likeBoost: 0, likeHd: new Map(),
   next: [], stage: [], st: null, stNext: 0, stEnd: performance.now(), active: new Map(), invited: new Map(),
   col: [], theTotal: 36, seg: { key: 'le', name: 'Phiên An Lạc', sub: '', end: performance.now() + 480000, next: '' }, scene: { cur: 'hall', prev: null, t: -1e9 }, hd: [], visit: null, visitAt: -1e9, chantAt: 0 };
@@ -473,7 +473,7 @@ function drawGoal(t){
   x.fillStyle=lg(X0,0,X0+w,0,[[0,'#d81b3c'],[.6,'#ff6b81'],[1,'#ffd56e']]);x.fillRect(X0+3,Y0+3,(w-6)*k,h-6);
   x.fillStyle=`rgba(255,255,255,${.12+.25*hb})`;x.fillRect(X0+3,Y0+3,(w-6)*k,(h-6)/2);x.restore();
   icon('tim',X0+20,Y0+h/2,15*(1+.3*hb));
-  const l=`${g.n.toLocaleString('vi-VN')} / ${g.target.toLocaleString('vi-VN')} tim  ·  đủ mốc: hiệu ứng đồng tâm`;
+  const l=`${g.n.toLocaleString('vi-VN')} / ${g.target.toLocaleString('vi-VN')} tim  ·  đủ mốc: mưa hoa sen`;
   txt(l,CX+8,Y0+20,fitFont(l,w-70,14,SANS,'800'),'#fff4dc','center',['rgba(60,0,10,.85)',3]);
   x.restore();
 }
@@ -490,7 +490,7 @@ function drawStats(t){
 function drawInfo(t){
   const ph=Math.floor(t/12000)%3, mode=ph===2&&!S.life.length?0:ph, X0=CARD.x, w=CARD.w;
   let rows;
-  if(mode===0) rows=[['nguoi','Bình luận','vào chánh điện'],['tim','Thả tim','đủ mốc: đồng tâm'],['the','Chat “rút thẻ”','thẻ chúc lành'],['mo','Chat “gõ mõ”','cùng gõ mõ'],['sen','Tặng quà','hiệu ứng cảm ơn']];
+  if(mode===0) rows=[['nguoi','Bình luận','vào chánh điện'],['tim','Thả tim','đủ mốc: mưa hoa sen'],['the','Chat “rút thẻ”','thẻ chúc lành'],['mo','Chat “gõ mõ”','cùng gõ mõ'],['sen','Tặng quà','hiệu ứng cảm ơn']];
   else if(mode===1){ const lad=S.rituals.filter(r=>r.minCoins!=null).sort((a,b)=>a.minCoins-b.minCoins); rows=lad.map((r,i)=>[r.key,GIFT_TIER[i]||'',r.name]); }
   else rows=S.life.slice(0,5).map((u,i)=>[null,short(u.name,12),`${u.points.toLocaleString('vi-VN')} điểm${titleOf(u.points)?' · '+titleOf(u.points):''}`,u,i]);
   const title=['THAM GIA','HIỆU ỨNG CẢM ƠN QUÀ','TRI KỶ TRỌN ĐỜI'][mode], RH=31, h=34+rows.length*RH+(mode===1?20:6), Y0=CARD.y;
@@ -554,7 +554,8 @@ function startFx(k,t,n){
   else if(k==='seg'){ bell(.3,196); setTimeout(()=>bell(.2,262),900); setTimeout(()=>bell(.16,392),1800); [0,1500,3000].forEach(d=>setTimeout(()=>{bowAll();mo();},d)); S.likeBoost+=80;
     for(let i=0;i<40;i++) S.petals.push({x:30+Math.random()*(W-60),y:-30-Math.random()*700,v:.8+Math.random()*.8,r:Math.random()*6,w:(Math.random()-.5)*.03,sen:true,s:.7+Math.random()*.55}); }
   if(k==='pq'||k==='goal'){ bell(k==='pq'?.38:.28,196); [0,1400,2800].forEach(d=>setTimeout(()=>{bowAll();mo();},d)); S.likeBoost+=k==='pq'?60:30; }
-  if(k==='goal') for(let i=0;i<40;i++) S.hearts.push({t:t+i*60,x:60+Math.random()*(W-120),y:H-40,s:16+Math.random()*12,ph:Math.random()*6});
+  if(k==='goal'){ for(let i=0;i<40;i++) S.hearts.push({t:t+i*60,x:60+Math.random()*(W-120),y:H-40,s:16+Math.random()*12,ph:Math.random()*6});
+    S.haloHit=t; for(let i=0;i<90;i++) S.petals.push({x:20+Math.random()*(W-40),y:-30-Math.random()*900,v:.9+Math.random()*.9,r:Math.random()*6,w:(Math.random()-.5)*.03,sen:true,s:.7+Math.random()*.6}); }
 }
 function band(title,sub,a,Y=700){
   x.fillStyle=lg(0,Y-10,0,Y+100,[[0,'rgba(40,6,0,0)'],[.2,'rgba(40,6,0,.85)'],[.8,'rgba(40,6,0,.85)'],[1,'rgba(40,6,0,0)']]);x.fillRect(0,Y-10,W,110);
@@ -586,7 +587,7 @@ function drawFx(t){
       : 'Cảm ơn '+f.name+' đã ủng hộ kênh',a);
   } else if(f.k==='goal'){
     if(age<700){x.save();x.globalAlpha=a*(1-age/700)*.45;x.fillStyle='#ffd0da';x.fillRect(0,0,W,H);x.restore();}
-    band('HIỆU ỨNG ĐỒNG TÂM',`Đủ ${(f.target||300).toLocaleString('vi-VN')} tim · cùng cúi đầu tĩnh tâm`,a);
+    band('MƯA HOA SEN',`Đủ ${(f.target||300).toLocaleString('vi-VN')} tim · cảm ơn đại chúng đã thả tim`,a);
   } else if(f.k==='seg'){   // đổi khóa lễ: chớp sáng + băng tên khóa mới
     if(age<800){x.save();x.globalAlpha=a*(1-age/800)*.5;x.fillStyle='#fff3d0';x.fillRect(0,0,W,H);x.restore();}
     x.save();x.globalCompositeOperation='lighter';const e=Math.min(1,age/1800);glow(HALO.x,HALO.y,180+260*e,`rgba(255,214,120,${.5*(1-age/D)})`,'rgba(255,170,60,0)');
@@ -663,14 +664,9 @@ function drawQa(t){
   drawHd(t,false);
 }
 // trong toạ độ cảnh, sau nền: màu theo giờ thật + hiệu ứng riêng của khóa lễ
-function todTint(){ const d=new Date(), h=d.getHours()+d.getMinutes()/60;
-  if (h>=5&&h<8.5) return 'rgba(255,190,120,.08)';     // bình minh
-  if (h>=16.5&&h<18.5) return 'rgba(255,130,50,.10)';  // hoàng hôn
-  if (h>=18.5||h<5) return 'rgba(20,30,90,.15)';       // đêm
-  return null; }
 const breath = t => { const p=(t%10000)/1000; return p<4 ? { b:ease(p/4), in:true } : { b:1-ease((p-4)/6), in:false }; };
 function segScene(t){
-  const tn=todTint(); if (tn) { x.fillStyle=tn; x.fillRect(-400,-400,W+800,H+800); }
+  timeSky(t);
   const k=S.seg.key;
   if (k==='ngu') {
     x.fillStyle='rgba(2,6,24,.42)'; x.fillRect(-400,-400,W+800,H+800);
@@ -737,7 +733,7 @@ function frame(){
   x.setTransform(SC,0,0,SC,0,0);
   stageTick(t); sceneTick(t); const K=camK(t), ca=1-K;   // K: 0 toàn cảnh → 1 cận bàn thờ; ca: độ hiện của đại chúng
   camUpdate(t,K); x.save(); camApply();
-  drawScenes(t); segScene(t);
+  drawScenes(t); segScene(t); drawSky(t);
 
   // ---- Phật tử: gom, xếp theo chiều sâu, vẽ thân trước, nhãn sau ----
   const items=[];
@@ -747,6 +743,91 @@ function frame(){
   x.restore();
   frameRest(t,K,ca);
 }
+// ---------------- cảnh núi sống động ----------------
+// thác nước, nến đỏ, đèn đá trong ảnh nền (toạ độ cảnh)
+const FALLS = [{x0:74,x1:110,y0:505,y1:725},{x0:580,x1:648,y0:540,y1:735}];
+const FLAMES = [[279,838,5],[444,838,5]], STONE = [[237,822],[485,822]];
+function drawAlive(t){
+  // thác: vệt nước trắng chảy xuống + bụi nước dưới chân thác
+  x.save(); x.lineCap='round';
+  FALLS.forEach(f=>{ const w=f.x1-f.x0;
+    for(let k=0;k<7;k++){ const xx=f.x0+w*(k+.5)/7+Math.sin(t/900+k)*1.2;
+      x.setLineDash([10+(k%3)*6,12+(k%2)*8]); x.lineDashOffset=-(t*(.16+(k%3)*.03)+k*17);
+      x.strokeStyle=`rgba(255,255,255,${.22+(k%2)*.12})`; x.lineWidth=1.6+(k%3)*.6;
+      x.beginPath(); x.moveTo(xx,f.y0); x.lineTo(xx+(k-3)*.8,f.y1); x.stroke(); }
+    x.setLineDash([]);
+    for(let k=0;k<3;k++){ const p=((t/2400)+k/3)%1; glow((f.x0+f.x1)/2+(k-1)*w*.4,f.y1-4-p*26,w*.55+p*w*.5,`rgba(255,255,255,${.22*(1-p)})`,'rgba(255,255,255,0)'); } });
+  x.restore();
+  // sương núi trôi chậm ngang vách đá
+  for(let i=0;i<6;i++){ const xx=((t*(.006+(i%3)*.003)+i*260)%(W+500))-250, yy=470+(i*83)%330;
+    glow(xx,yy,150+(i%2)*60,`rgba(255,248,235,${.08+(i%3)*.025})`,'rgba(255,248,235,0)'); }
+  // nến đỏ + đèn đá: lửa lung linh; hào quang bừng khi sen tri ân chạm tới
+  x.save(); x.globalCompositeOperation='lighter';
+  STONE.forEach(([X,Y],i)=>{ const fl=.8+.2*Math.sin(t/170+i*2)+.1*Math.sin(t/53+i); glow(X,Y,30*fl,`rgba(255,200,100,${.45*fl})`,'rgba(255,160,40,0)'); });
+  FLAMES.forEach(([X,Y,r],i)=>{ const fl=.85+.15*Math.sin(t/90+i*3)+.08*Math.sin(t/37+i); glow(X,Y,16*fl,'rgba(255,190,90,.6)','rgba(255,150,40,0)');
+    x.fillStyle='#fff2b0'; x.beginPath(); x.ellipse(X+Math.sin(t/140+i)*.8,Y,r*.45,r*fl,0,0,7); x.fill(); });
+  const hh=Math.max(0,1-(t-(S.haloHit||-1e9))/1400); if(hh>0){ glow(HALO.x,HALO.y,120+260*(1-hh),`rgba(255,226,140,${.55*hh})`,'rgba(255,190,80,0)'); }
+  x.restore();
+}
+// trời theo giờ thật: sáng nắng sớm hồng, chiều hoàng hôn cam, đêm trăng sao + đom đóm (thử: thêm ?gio=sang|ngay|chieu|dem)
+const GIO = new URLSearchParams(location.search).get('gio');
+function dayPart(){ if (GIO) return GIO; const d=new Date(), h=d.getHours()+d.getMinutes()/60; return h>=5&&h<8.5?'sang':h>=16.5&&h<18.5?'chieu':(h>=18.5||h<5)?'dem':'ngay'; }
+function timeSky(t){
+  const p=dayPart();
+  if (p==='sang') { x.fillStyle=lg(0,0,0,700,[[0,'rgba(255,170,190,.16)'],[1,'rgba(255,200,150,0)']]);x.fillRect(-400,-400,W+800,1100);
+    x.save();x.globalCompositeOperation='lighter';
+    for(let i=0;i<5;i++){ x.save();x.translate(650,60);x.rotate(.35+i*.16+Math.sin(t/9000+i)*.03);x.fillStyle=`rgba(255,236,190,${.045+.02*Math.sin(t/1300+i)})`;x.beginPath();x.moveTo(0,0);x.lineTo(-38,950);x.lineTo(38,950);x.closePath();x.fill();x.restore(); }
+    x.restore(); }
+  else if (p==='chieu') { x.fillStyle=lg(0,0,0,H,[[0,'rgba(255,120,40,.2)'],[.6,'rgba(255,110,40,.08)'],[1,'rgba(80,20,10,.12)']]);x.fillRect(-400,-400,W+800,H+800); }
+  else if (p==='dem') { x.fillStyle=lg(0,0,0,H,[[0,'rgba(8,14,48,.5)'],[.45,'rgba(10,16,50,.32)'],[1,'rgba(6,8,30,.3)']]);x.fillRect(-400,-400,W+800,H+800);
+    for(let i=0;i<60;i++){ const h=hashOf('sao'+i); x.fillStyle=`rgba(255,250,235,${(.25+(h%50)/100)*(.6+.4*Math.sin(t/(700+(h%900))+i))})`;x.beginPath();x.arc(h%W,(h>>9)%340,((h>>4)%3)*.4+.6,0,7);x.fill(); }
+    glow(600,330,70,'rgba(230,236,255,.25)','rgba(200,210,255,0)');x.fillStyle=rg(594,326,0,22,[[0,'#fffdf2'],[.8,'#efe8cc'],[1,'#d8cfa8']]);x.beginPath();x.arc(600,330,20,0,7);x.fill();
+    x.save();x.globalCompositeOperation='lighter';
+    glow(HALO.x,HALO.y,190,'rgba(255,214,120,.22)','rgba(255,170,60,0)');   // tượng vẫn sáng trong đêm
+    for(let i=0;i<22;i++){ const h=hashOf('dom'+i), bx=(i%2?560:20)+(h%140), by=680+(h>>7)%380, a=.5+.5*Math.sin(t/(400+(h%500))+i*1.7);
+      glow(bx+Math.sin(t/(1800+(h%900))+i)*26,by+Math.cos(t/(2300+(h%700))+i)*18,7,`rgba(210,255,140,${.75*a})`,'rgba(180,255,120,0)'); }
+    x.restore(); }
+}
+// hạc trắng bay ngang trời: tự bay mỗi 45–65 giây; theo dõi kênh → 1 con mang tên; tri kỷ vào → đôi hạc đón
+function addCranes(n,name,t,y){ const dir=Math.random()<.5?1:-1, y0=y||400+Math.random()*90;   // ngang vách núi, dưới các dải chữ
+  for(let i=0;i<n;i++) S.cranes.push({t:t+i*380,dir,y:y0+i*24+(i%2)*10,s:.95+Math.random()*.25-(i?.15:0),ph:Math.random()*6,name:i===0?name:null,D:12000+Math.random()*3000});
+  if (S.cranes.length>12) S.cranes.splice(0,S.cranes.length-12); }
+function crane(X,Y,s,dir,ph){
+  x.save();x.translate(X,Y);x.scale(s*dir,s);
+  const wy=-13*Math.sin(ph);
+  x.fillStyle='#e6e2d6';x.beginPath();x.moveTo(-2,-2);x.quadraticCurveTo(-5,wy-10,-15,wy-19);x.lineTo(-9,wy-15);x.quadraticCurveTo(2,wy-7,6,-1);x.closePath();x.fill();   // cánh xa
+  x.fillStyle='#fdfdf8';x.beginPath();x.ellipse(0,0,15,5.5,-.05,0,7);x.fill();
+  x.strokeStyle='#fdfdf8';x.lineWidth=2.6;x.lineCap='round';x.beginPath();x.moveTo(12,-1);x.quadraticCurveTo(20,-4,27,-3);x.stroke();
+  x.fillStyle='#2a2420';x.beginPath();x.moveTo(27,-4.6);x.lineTo(36,-2.6);x.lineTo(27,-1.4);x.closePath();x.fill();
+  x.fillStyle='#d8261a';x.beginPath();x.arc(26,-4.3,1.7,0,7);x.fill();
+  x.strokeStyle='#3a3530';x.lineWidth=1.2;x.beginPath();x.moveTo(-13,1);x.lineTo(-29,3);x.moveTo(-13,2);x.lineTo(-28,5.5);x.stroke();
+  x.fillStyle='#ffffff';x.beginPath();x.moveTo(-4,-1);x.quadraticCurveTo(-2,wy-6,-10,wy-24);x.quadraticCurveTo(5,wy-14,8,-1);x.closePath();x.fill();   // cánh gần
+  x.fillStyle='#24201c';x.beginPath();x.moveTo(-10,wy-24);x.quadraticCurveTo(-5,wy-18,-3,wy-12);x.lineTo(-7,wy-14);x.closePath();x.fill();
+  x.restore();
+}
+function drawCranes(t){
+  if (t-(S.craneAt||-1e9)>(S.craneGap||0) && S.seg.key!=='ngu') { S.craneAt=t; S.craneGap=45000+Math.random()*20000; addCranes(2+(Math.random()<.4?1:0),null,t); }
+  S.cranes=S.cranes.filter(c=>t-c.t<c.D);
+  S.cranes.forEach(c=>{ if(t<c.t) return; const k=(t-c.t)/c.D, X=c.dir>0?-60+k*(W+120):W+60-k*(W+120), Y=c.y+Math.sin(k*9+c.ph)*12-k*30;
+    crane(X,Y,c.s,c.dir,(t-c.t)/150+c.ph);
+    if (c.name) { const nm=short(c.name,14), f=`800 12px ${SANS}`; x.font=f; const w=x.measureText(nm).width+14;
+      x.fillStyle='rgba(30,8,3,.8)';rr(X-w/2,Y+16,w,18,9);x.fill();x.strokeStyle='rgba(240,200,110,.8)';x.lineWidth=1;x.stroke();txt(nm,X,Y+29,f,'#ffe7a3'); } });
+}
+// sen tri ân: ai tặng quà thì một đóa sen vàng mang tên bay từ lư hương lên, tan vào hào quang
+function goldLotus(X,Y,s){ x.save();x.translate(X,Y);x.scale(s,s);
+  [[-1.15,'#d99a22'],[1.15,'#d99a22'],[-.68,'#f2bf45'],[.68,'#f2bf45'],[-.22,'#ffe08a'],[.22,'#ffe08a']].forEach(([a,cl])=>{x.save();x.rotate(a);x.fillStyle=cl;x.beginPath();x.moveTo(0,0);x.quadraticCurveTo(10,-13,0,-27);x.quadraticCurveTo(-10,-13,0,0);x.fill();x.strokeStyle='rgba(255,250,210,.6)';x.lineWidth=.8;x.stroke();x.restore();});
+  x.fillStyle='#fff6c8';x.beginPath();x.arc(0,-7,3.6,0,7);x.fill(); x.restore(); }
+function drawLotusUp(t){
+  S.lotusUp=S.lotusUp.filter(l=>t-l.t<4200);
+  S.lotusUp.forEach((l,i)=>{ const k=(t-l.t)/4200, e=ease(Math.min(1,k/.8)), X=CX+Math.sin(k*6+i)*12, Y=850-e*(850-HALO.y-20), sz=1.3+.5*Math.min(1,k*2), a=k<.8?Math.min(1,k*6):1-(k-.8)/.2;
+    x.save();x.globalAlpha=a;
+    x.save();x.globalCompositeOperation='lighter';glow(X,Y-10,48*sz,'rgba(255,215,110,.6)','rgba(255,180,60,0)');x.restore();
+    goldLotus(X,Y,sz);
+    if (k<.8) txt(short(l.name,14),X,Y+22,`800 13px ${SANS}`,'#fff4d0','center',['rgba(80,30,0,.9)',3]);
+    x.restore();
+    if (k>.8&&!l.hit) { l.hit=true; S.haloHit=t; } });
+}
+function drawSky(t){ drawLotusUp(t); drawCranes(t); }
 // chánh điện: ảnh nền + hào quang, khói trầm, hạt vàng, đèn lưu ly
 function drawHall(t){
   blit(BACK,0,0);
@@ -778,6 +859,7 @@ function drawHall(t){
     glow(L.x,L.y-6,(isNew?26:13)*fl,'rgba(255,200,90,.75)','rgba(255,160,40,0)');
     x.fillStyle=lg(L.x-5,0,L.x+5,0,[[0,'#8a5a14'],[.5,'#f6cf6a'],[1,'#8a5a14']]);x.beginPath();x.moveTo(L.x-5,L.y-3);x.lineTo(L.x+5,L.y-3);x.lineTo(L.x+3,L.y+2);x.lineTo(L.x-3,L.y+2);x.closePath();x.fill();
     x.fillStyle='#fff3c0';x.beginPath();x.ellipse(L.x,L.y-8,2.2,4.5*fl,0,0,7);x.fill();}
+  drawAlive(t);
 }
 function frameCrowd(t,K,ca,items){
   const add=(u,home,rank)=>{
@@ -809,15 +891,22 @@ function drawPolicy(){
   const l1='Không gian mô phỏng thư giãn, tĩnh tâm · không đại diện cho cơ sở tôn giáo nào', l2='Hình ảnh mô phỏng · giọng đọc AI · quà tặng là ủng hộ kênh, không phải tiền cúng dường';
   txt(l1,CX,Y+15,fitFont(l1,690,12.5,SANS,'700'),'rgba(255,236,200,.92)'); txt(l2,CX,Y+34,fitFont(l2,690,12,SANS,'600'),'rgba(255,226,180,.85)');
 }
+const PEACH=['rgba(255,183,203,.92)','rgba(255,206,220,.92)','rgba(248,160,188,.9)','rgba(255,222,140,.85)'];
+// cánh hoa đào rời từ 2 tán cây góc trên (hiện mờ dần, không bật ra giữa trời)
+function peach(t,gust){ const L=gust||Math.random()<.45; return { x:L?Math.random()*150:540+Math.random()*180, y:20+Math.random()*(L?190:260), born:t, v:.5+Math.random()*.8, r:Math.random()*6, w:(Math.random()-.5)*.05, c:PEACH[Math.floor(Math.random()*3)] }; }
 function frameRest(t,K,ca){
   // hoa rơi theo tim (vẽ trước các bảng để không đè chữ)
   if(t-(S.senWave||-1e9)>30000){S.senWave=t;for(let k=0;k<14;k++)S.petals.push({x:50+Math.random()*(W-100),y:-30-Math.random()*260,v:.7+Math.random()*.7,r:Math.random()*6,w:(Math.random()-.5)*.03,sen:true,s:.7+Math.random()*.5});}
   const want=24+Math.min(110,S.likeBoost);S.likeBoost*=.998;
-  while(S.petals.length<want)S.petals.push({x:Math.random()*W,y:-20-Math.random()*400,v:.6+Math.random()*1.1,r:Math.random()*6,w:(Math.random()-.5)*.04,c:Math.random()<.6?'rgba(255,214,80,.85)':'rgba(255,190,205,.85)',sen:Math.random()<.35});
-  S.petals.forEach(p=>{p.y+=p.v*1.6;p.x+=Math.sin(p.y/60+p.r)*.6;p.r+=p.w;
-    if(p.sen){x.save();x.translate(p.x,p.y);x.rotate(Math.sin(p.r)*.5);senHoa(p.s||.7);x.restore();return;}
-    x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.beginPath();x.ellipse(0,0,7,3.5,0,0,7);x.fill();x.restore();});
-  S.petals=S.petals.filter(p=>p.y<H+30).slice(0,170);
+  // gió: mỗi 50–70 giây một cơn thổi hoa đào từ cây bên trái bay xiên
+  if(t>(S.gustNext||0)){ if(S.gustNext){ S.gust=t; for(let i=0;i<26;i++) S.petals.push(peach(t,true)); } S.gustNext=t+50000+Math.random()*20000; }
+  const gk=S.gust?(t-S.gust)/6000:1; S.wind=gk<1?Math.sin(gk*Math.PI)*2.8:0;
+  while(S.petals.length<want)S.petals.push(Math.random()<.4?peach(t,false):{x:Math.random()*W,y:-20-Math.random()*400,v:.6+Math.random()*1.1,r:Math.random()*6,w:(Math.random()-.5)*.04,c:PEACH[Math.floor(Math.random()*PEACH.length)],sen:Math.random()<.3});
+  S.petals.forEach(p=>{p.y+=p.v*1.6;p.x+=Math.sin(p.y/60+p.r)*.6+S.wind*(p.sen?.45:1);p.r+=p.w*(1+S.wind);
+    const fa=p.born?Math.min(1,(t-p.born)/700):1;
+    if(p.sen){x.save();x.globalAlpha=fa;x.translate(p.x,p.y);x.rotate(Math.sin(p.r)*.5);senHoa(p.s||.7);x.restore();return;}
+    x.save();x.globalAlpha=fa;x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.beginPath();x.ellipse(0,0,6.5,3.6,0,0,7);x.fill();x.fillStyle='rgba(255,255,255,.35)';x.beginPath();x.ellipse(-1.5,-.8,2.6,1.2,0,0,7);x.fill();x.restore();});
+  S.petals=S.petals.filter(p=>p.y<H+30&&p.x<W+60).slice(0,190);
   // ánh vàng khi vừa vào chỗ
   for(const [id,j] of S.joins){ if(t-j>1600){S.joins.delete(id);continue;} }
 
@@ -828,7 +917,7 @@ function frameRest(t,K,ca){
   const TY=196;x.fillStyle=lg(0,TY,0,TY+28,[[0,'#7a1208'],[1,'#4a0904']]);x.fillRect(0,TY,W,28);
   x.strokeStyle='#e0aa48';x.lineWidth=1.5;x.beginPath();x.moveTo(0,TY+.5);x.lineTo(W,TY+.5);x.moveTo(0,TY+27.5);x.lineTo(W,TY+27.5);x.stroke();
   // câu hướng dẫn vào chánh điện luôn đứng đầu, rồi tới lời của chùa (config.ticker)
-  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   Không gian mô phỏng để thư giãn, tĩnh tâm · không đại diện cho cơ sở tôn giáo nào   ✦   '+(S.stageMin?'Cảm ơn hoa hồng đồng hành ở vị trí trung tâm   ✦   ':'')+'Chat “gõ mõ” để cùng gõ mõ   ✦   Chat “rút thẻ” mỗi ngày nhận 1 thẻ chúc lành miễn phí · sưu tầm đủ '+S.theTotal+' thẻ   ✦   Chương trình giải trí · quà tặng là ủng hộ kênh, không phải tiền cúng dường   ✦   Thả tim đủ mốc: hiệu ứng đồng tâm   ✦   Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
+  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   Không gian mô phỏng để thư giãn, tĩnh tâm · không đại diện cho cơ sở tôn giáo nào   ✦   '+(S.stageMin?'Cảm ơn hoa hồng đồng hành ở vị trí trung tâm   ✦   ':'')+'Chat “gõ mõ” để cùng gõ mõ   ✦   Chat “rút thẻ” mỗi ngày nhận 1 thẻ chúc lành miễn phí · sưu tầm đủ '+S.theTotal+' thẻ   ✦   Chương trình giải trí · quà tặng là ủng hộ kênh, không phải tiền cúng dường   ✦   Thả tim đủ mốc: mưa hoa sen   ✦   Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
   x.font='italic 600 15px '+SERIF;const tw=x.measureText(tk).width;const off=(t/26)%tw;
   for(let k=0;k<Math.ceil(W/tw)+1;k++)txt(tk,-off+k*tw,TY+19,'italic 600 15px '+SERIF,'#ffe7b0','left');
   drawBanner(t);
@@ -910,6 +999,21 @@ function audioInit(){
     const n=AC.createBufferSource(); n.buffer=b; n.loop=true; const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1400;
     rainGain=AC.createGain(); rainGain.gain.value=0; n.connect(lp); lp.connect(rainGain); rainGain.connect(master); n.start();
     setInterval(()=>{ const on=S.seg.key==='ngu'; rainGain.gain.setTargetAtTime(on?.22:0,AC.currentTime,1.5); if(BGM) BGM.volume=on?.45:1; }, 1000); }
+  // âm thanh núi (rất nhỏ, dưới nhạc nền): suối chảy, chim hót xa (ban ngày), chuông gió
+  { const b=AC.createBuffer(1,AC.sampleRate*3,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    const n=AC.createBufferSource(); n.buffer=b; n.loop=true; const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=.6;
+    const g=AC.createGain(); g.gain.value=.035; const l=AC.createOscillator(); l.frequency.value=.13; const lg2=AC.createGain(); lg2.gain.value=.012; l.connect(lg2); lg2.connect(g.gain); l.start();
+    n.connect(bp); bp.connect(g); g.connect(bgGain); n.start(); }
+  const chirp=()=>{ if (S.seg.key!=='ngu' && dayPart()!=='dem') { const t0=AC.currentTime, n=2+Math.floor(Math.random()*3), f0=2600+Math.random()*1400;
+      for(let i=0;i<n;i++){ const o=AC.createOscillator(), g=AC.createGain(), w=t0+i*.13; o.frequency.setValueAtTime(f0,w); o.frequency.exponentialRampToValueAtTime(f0*(1.3+Math.random()*.4),w+.07);
+        g.gain.setValueAtTime(0,w); g.gain.linearRampToValueAtTime(.018,w+.01); g.gain.exponentialRampToValueAtTime(.0005,w+.1); o.connect(g); g.connect(bgGain); o.start(w); o.stop(w+.12); } }
+    setTimeout(chirp, 6000+Math.random()*14000); };
+  setTimeout(chirp, 4000);
+  const chime=()=>{ const t0=AC.currentTime, ns=[1568,1760,2093,2349,2637];
+    for(let i=0;i<3;i++){ const o=AC.createOscillator(), g=AC.createGain(), w=t0+i*(.18+Math.random()*.2); o.frequency.value=ns[Math.floor(Math.random()*ns.length)];
+      g.gain.setValueAtTime(0,w); g.gain.linearRampToValueAtTime(.012,w+.005); g.gain.exponentialRampToValueAtTime(.0003,w+2.2); o.connect(g); g.connect(bgGain); o.start(w); o.stop(w+2.3); }
+    setTimeout(chime, 15000+Math.random()*20000); };
+  setTimeout(chime, 9000);
   // nhạc nền lặp (Án Ma Ni Bát Di Hồng): public/audio/nen.mp3, phát dạng luồng; đi qua bgGain nên tự nhỏ lại khi giọng đọc phát
   BGM = new Audio('/audio/nen.mp3'); BGM.loop = true;
   const bs = AC.createMediaElementSource(BGM), bg2 = AC.createGain(); bg2.gain.value = .8; bs.connect(bg2); bg2.connect(bgGain);
@@ -987,7 +1091,9 @@ function handle(m){
       const p=S.anchor.get(m.id); if(p) S.floats.push({t,x:p.x,y:p.y,icon:'mo',text:'+1',size:15}); S.bows.set(m.id,t); maybeVisit(m.id,t); break; }
     case 'crowd': S.bigQ.unshift({k:'pq',crowd:true,joins:m.joins,viewers:m.viewers}); break;   // người vào đông: Phật quang phổ chiếu
     case 'goaldone': if (m.goal) S.goal=m.goal; S.bigQ.unshift({k:'goal',target:m.target}); break;   // đủ tim: chen lên đầu hàng hiệu ứng
-    case 'vip': S.toasts.push({t,icon:'qua',l1:`Chào mừng tri kỷ ${m.name}`,l2:`${m.title} · đã trở về Không Gian An Lạc`}); S.likeBoost+=25; S.joins.set(m.id,t); break;
+    case 'vip': S.toasts.push({t,icon:'qua',l1:`Chào mừng tri kỷ ${m.name}`,l2:`${m.title} · đã trở về Không Gian An Lạc`}); S.likeBoost+=25; S.joins.set(m.id,t);
+      addCranes(2,m.name,t,430); S.gust=t; for(let i=0;i<20;i++) S.petals.push(peach(t,true)); break;
+    case 'follow': addCranes(1,m.name,t); S.likeBoost+=10; break;   // theo dõi kênh: một cánh hạc mang tên bay ngang trời
     case 'levelup': S.toasts.push({t,icon:'qua',l1:`${m.name} lên cấp ${m.title}`,l2:'Chúc mừng bạn lên cấp mới'}); break;
     case 'rituals': S.rituals=m.rituals; break;
     case 'ritual': {
@@ -1022,6 +1128,7 @@ function handle(m){
       if (m.count>=5) maybeVisit(m.id,t);
       break; }
     case 'gift': { const p=S.anchor.get(m.id); if(p) S.floats.push({t,x:p.x,y:p.y,text:'+'+m.points+' điểm',size:18}); S.bows.set(m.id,t);
+      if (t-(S.luAt.get(m.id)||-1e9)>3000) { S.luAt.set(m.id,t); S.lotusUp.push({t,name:m.name}); if (S.lotusUp.length>6) S.lotusUp.shift(); }
       // xếp hàng lên chánh điện; người đã đang chờ (hoặc đang lên, chưa lạy) thì cộng dồn quà
       const q=(S.st&&S.st.id===m.id&&!S.st.fired)?S.st:S.stage.find(s=>s.id===m.id);
       if (q) { q.count+=m.count; q.points+=m.points; q.gift=m.gift; if (m.rose && q!==S.st && !q.rose) { q.rose=true; S.stage.splice(S.stage.indexOf(q),1); roseFirst(q); } }
