@@ -50,7 +50,7 @@ const S = { temple: 'KHÔNG GIAN AN LẠC', ticker: '', seats: [], top: [], niem
   acts: new Map(), joins: new Map(), bows: new Map(), bubbles: new Map(), anchor: new Map(), hot: new Map(),
   floats: [], toasts: [], petals: [], sparks: [], lanterns: [], smoke: [], lampNew: 0, que: null, bellFx: null, bigQ: [], hearts: [], likeHit: 0, likeBoost: 0, likeHd: new Map(),
   next: [], stage: [], st: null, stNext: 0, stEnd: performance.now(), active: new Map(), invited: new Map(),
-  col: [], theTotal: 36, seg: { key: 'le', name: 'Khóa Lễ Phật', sub: '', end: performance.now() + 480000, next: '' }, scene: { cur: 'hall', prev: null, t: -1e9 }, hd: [], visit: null, visitAt: -1e9, chantAt: 0 };
+  col: [], theTotal: 36, seg: { key: 'le', name: 'Phiên An Lạc', sub: '', end: performance.now() + 480000, next: '' }, scene: { cur: 'hall', prev: null, t: -1e9 }, hd: [], visit: null, visitAt: -1e9, chantAt: 0 };
 
 // ---------------- vẽ: công cụ ----------------
 function rr(a,b,w,h,q){x.beginPath();x.moveTo(a+q,b);x.arcTo(a+w,b,a+w,b+h,q);x.arcTo(a+w,b+h,a,b+h,q);x.arcTo(a,b+h,a,b,q);x.arcTo(a,b,a+w,b,q);x.closePath();}
@@ -471,7 +471,7 @@ function drawQueue(t,y0){
   const h=44+Math.max(1,rows.length)*26+(more?18:0)+(nx&&last?22:0)+6;
   panel(PR.x,y0,PR.w,h,'VỊ TRÍ TRUNG TÂM');
   let y=y0+44;
-  if(!rows.length){ txt('Thả hoa hồng để lên vị trí trung tâm',PR.x+PR.w/2,y+17,fitFont('Thả hoa hồng để lên vị trí trung tâm',PR.w-16,12,SANS,'700'),'#f0c87a'); y+=26; }
+  if(!rows.length){ txt('Cảm ơn hoa hồng đồng hành',PR.x+PR.w/2,y+17,fitFont('Cảm ơn hoa hồng đồng hành',PR.w-16,12,SANS,'700'),'#f0c87a'); y+=26; }
   rows.forEach((r,i)=>{ const s=r.u;
     if(r.now){x.fillStyle=`rgba(255,200,90,${.18+.1*Math.sin(t/200)})`;rr(PR.x+8,y+1,PR.w-16,24,7);x.fill();}
     x.fillStyle=r.now?'#ffd54a':'#5a2a14';x.beginPath();x.arc(PR.x+21,y+13,9,0,7);x.fill();
@@ -521,16 +521,17 @@ function drawCard(t){
   const ft='Thẻ của '+q.name+(q.bo?` · bộ sưu tập ${q.bo}/${q.tong||S.theTotal}`:'');
   txt(ft,CX,Y+252,fitFont(ft,w-50,17,SANS,'800'),R.bd);
   if(q.moi){ x.save();x.translate(X0+w-46,Y+30);x.rotate(.25);x.fillStyle='#d8261a';rr(-34,-13,68,26,13);x.fill();x.strokeStyle='#ffe27a';x.lineWidth=2;x.stroke();txt('MỚI',0,6,`800 15px ${SANS}`,'#fff7d0');x.restore(); }
-  txt(`Số ${q.so||''} · thẻ để suy ngẫm, không phải bói toán`,CX,Y+278,`600 11px ${SANS}`,R.ink);
+  txt(`Thẻ số ${q.so||''}/${S.theTotal} · thẻ để suy ngẫm, không phải bói toán`,CX,Y+278,`600 11px ${SANS}`,R.ink);
   x.restore();
 }
 // hiệu ứng toàn màn hình: hoa sen nở (30 xu), Phật quang (299 xu), đại chúng lạy khi đủ tim
-const FXD = { sen: 5200, pq: 7500, goal: 5200, seg: 4200 };
+const FXD = { sen: 5200, pq: 7500, goal: 5200, seg: 9000 };
 function bowAll(){ const t=now(); for(const u of [...S.top,...S.seats]) if(u) S.bows.set(u.id,t); }
 function startFx(k,t,n){
   S.fx={k,t,...n};
   if(k==='sen'){ bell(.16,523); setTimeout(()=>bell(.12,659),500); }
-  if(k==='seg'){ bell(.22,262); setTimeout(()=>bell(.16,392),900); }
+  if(k==='seg'){ bell(.3,196); setTimeout(()=>bell(.2,262),900); setTimeout(()=>bell(.16,392),1800); [0,1500,3000].forEach(d=>setTimeout(()=>{bowAll();mo();},d)); S.likeBoost+=80;
+    for(let i=0;i<40;i++) S.petals.push({x:30+Math.random()*(W-60),y:-30-Math.random()*700,v:.8+Math.random()*.8,r:Math.random()*6,w:(Math.random()-.5)*.03,sen:true,s:.7+Math.random()*.55}); }
   if(k==='pq'||k==='goal'){ bell(k==='pq'?.38:.28,196); [0,1400,2800].forEach(d=>setTimeout(()=>{bowAll();mo();},d)); S.likeBoost+=k==='pq'?60:30; }
   if(k==='goal') for(let i=0;i<40;i++) S.hearts.push({t:t+i*60,x:60+Math.random()*(W-120),y:H-40,s:16+Math.random()*12,ph:Math.random()*6});
 }
@@ -567,8 +568,12 @@ function drawFx(t){
     band('HIỆU ỨNG ĐỒNG TÂM',`Đủ ${(f.target||300).toLocaleString('vi-VN')} tim · cùng cúi đầu tĩnh tâm`,a);
   } else if(f.k==='seg'){   // đổi khóa lễ: chớp sáng + băng tên khóa mới
     if(age<800){x.save();x.globalAlpha=a*(1-age/800)*.5;x.fillStyle='#fff3d0';x.fillRect(0,0,W,H);x.restore();}
-    txt('✦  KHÓA LỄ MỚI  ✦',CX,690,`800 15px ${SANS}`,'#ffd98a','center',['rgba(40,6,0,.9)',4],{spacing:5});
+    x.save();x.globalCompositeOperation='lighter';const e=Math.min(1,age/1800);glow(HALO.x,HALO.y,180+260*e,`rgba(255,214,120,${.5*(1-age/D)})`,'rgba(255,170,60,0)');
+    for(let k=0;k<3;k++){const r2=((age/7)+k*140)%420;x.strokeStyle=`rgba(255,236,170,${.6*(1-r2/420)})`;x.lineWidth=4;x.beginPath();x.arc(HALO.x,HALO.y,60+r2,0,7);x.stroke();}x.restore();
+    txt('✦  PHIÊN MỚI  ✦',CX,690,`800 15px ${SANS}`,'#ffd98a','center',['rgba(40,6,0,.9)',4],{spacing:5});
     band(f.name.toUpperCase(),f.sub||'',a);
+    if(f.top&&f.top.length){const l='Cảm ơn đồng hành: '+f.top.join(' · ');x.fillStyle='rgba(40,6,0,.82)';rr(40,812,W-80,40,20);x.fill();
+      txt(l,CX,839,fitFont(l,W-110,17,SANS,'800'),'#ffe27a','center',['rgba(60,20,0,.9)',3]);}
   }
   x.restore();
 }
@@ -682,7 +687,7 @@ function drawTopLine(t){
 }
 function setSeg(g,announce){
   const t=now(), changed=g.key!==S.seg.key; S.seg={...g,end:t+(g.left||0)};
-  if (changed) { S.hd=[]; if (announce) S.bigQ.unshift({k:'seg',name:g.name,sub:g.sub||''}); }
+  if (changed) { S.hd=[]; if (announce) S.bigQ.unshift({k:'seg',name:g.name,sub:g.sub||'',top:S.top.filter(Boolean).slice(0,3).map(u=>u.name)}); }
 }
 // ô camera người dẫn lễ: thêm ?cam=1 (hoặc ?cam=x,y,w,h) vào link nguồn, rồi đặt nguồn webcam của LIVE Studio / OBS khít vào khung này
 const HOSTCAM = (() => { const q=new URLSearchParams(location.search).get('cam'); if (!q||q==='0') return null;
@@ -783,7 +788,7 @@ function frameRest(t,K,ca){
   const TY=196;x.fillStyle=lg(0,TY,0,TY+28,[[0,'#7a1208'],[1,'#4a0904']]);x.fillRect(0,TY,W,28);
   x.strokeStyle='#e0aa48';x.lineWidth=1.5;x.beginPath();x.moveTo(0,TY+.5);x.lineTo(W,TY+.5);x.moveTo(0,TY+27.5);x.lineTo(W,TY+27.5);x.stroke();
   // câu hướng dẫn vào chánh điện luôn đứng đầu, rồi tới lời của chùa (config.ticker)
-  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   Không gian mô phỏng để thư giãn, tĩnh tâm · không đại diện cho cơ sở tôn giáo nào   ✦   '+(S.stageMin?'Thả hoa hồng để lên vị trí trung tâm   ✦   ':'')+'Chat “gõ mõ” để cùng gõ mõ   ✦   Chat “rút thẻ” mỗi ngày nhận 1 thẻ chúc lành miễn phí · sưu tầm đủ '+S.theTotal+' thẻ   ✦   Chương trình giải trí · quà tặng là ủng hộ kênh, không phải tiền cúng dường   ✦   Thả tim đủ mốc: hiệu ứng đồng tâm   ✦   Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
+  const tk='Bình luận bất kỳ để vào chánh điện quỳ lễ   ✦   Không gian mô phỏng để thư giãn, tĩnh tâm · không đại diện cho cơ sở tôn giáo nào   ✦   '+(S.stageMin?'Cảm ơn hoa hồng đồng hành ở vị trí trung tâm   ✦   ':'')+'Chat “gõ mõ” để cùng gõ mõ   ✦   Chat “rút thẻ” mỗi ngày nhận 1 thẻ chúc lành miễn phí · sưu tầm đủ '+S.theTotal+' thẻ   ✦   Chương trình giải trí · quà tặng là ủng hộ kênh, không phải tiền cúng dường   ✦   Thả tim đủ mốc: hiệu ứng đồng tâm   ✦   Chat “Nam mô A Di Đà Phật” để cùng niệm Phật   ✦   '+(S.ticker||'Thành tâm lễ Phật, cầu bình an cho gia đạo')+'   ✦   ';
   x.font='italic 600 15px '+SERIF;const tw=x.measureText(tk).width;const off=(t/26)%tw;
   for(let k=0;k<Math.ceil(W/tw)+1;k++)txt(tk,-off+k*tw,TY+19,'italic 600 15px '+SERIF,'#ffe7b0','left');
   drawBanner(t);
@@ -812,7 +817,7 @@ function frameRest(t,K,ca){
   if(S.statY){ const y=S.statY, seated=S.seats.filter(Boolean).length+S.top.length;
     x.fillStyle='rgba(30,6,2,.82)';rr(PL.x,y,PL.w,106,12);x.fill();x.strokeStyle='#d9a441';x.lineWidth=1.5;x.stroke();
     const hb=S.likeHit?Math.max(0,1-(t-S.likeHit)/600):0, hm=Math.max(0,1-(t-S.combo.t)/400);
-    [['mo','Tiếng mõ',S.mo],['sen','Niệm Phật',S.niem],['tim','Thả tim',S.likes],['nguoi','Đang lễ Phật',seated]].forEach(([ic,lb,v],k)=>{
+    [['mo','Tiếng mõ',S.mo],['sen','Đồng niệm',S.niem],['tim','Thả tim',S.likes],['nguoi','Đang tĩnh tâm',seated]].forEach(([ic,lb,v],k)=>{
       icon(ic,PL.x+22,y+19+k*23,ic==='tim'?15*(1+.35*hb):ic==='mo'?15*(1+.35*hm):15);txt(lb,PL.x+38,y+24+k*23,`700 12.5px ${SANS}`,'#f6e7cc','left');
       txt(v.toLocaleString('vi-VN'),PL.x+PL.w-14,y+24+k*23,`800 14px ${SANS}`,'#ffd98a','right'); }); }
   drawCombo(t);
