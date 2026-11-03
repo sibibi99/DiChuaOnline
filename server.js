@@ -13,6 +13,8 @@ if (process.env.VOICE_ENGINE) cfg.voice.engine = process.env.VOICE_ENGINE;
 // GAME=bia-hoi (hoặc "game" trong config): chạy Bia Hơi Đảo Thần Tiên thay Chùa Online, cùng cổng / cùng link nguồn
 const GAME = process.env.GAME || cfg.game || 'chua';
 const { Room } = require(GAME === 'bia-hoi' ? './lib/bia-hoi/room' : './lib/room');
+// Bia Hơi đọc giọng riêng (mặc định Adam bựa miền Bắc của Voice Lab); đổi bằng config.biaHoi.voice, Chùa giữ giọng cũ
+if (GAME === 'bia-hoi' && cfg.voice.voicelab) cfg.voice.voicelab = { ...cfg.voice.voicelab, voice: cfg.biaHoi?.voice || 'vi-adam-bua' };
 console.log('Cấu hình:', cfgFile, '| game:', GAME);
 
 const engine = new VoiceEngine(cfg.voice);
