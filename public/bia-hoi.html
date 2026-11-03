@@ -424,18 +424,20 @@ function fireworks(t0,t){
 // ---------------- camera trôi + ghé bàn vừa gọi món ----------------
 const CAM = { z: 1.04, fx: CX, fy: 900, tz: 1.04, tx: CX, ty: 900, until: 0 };
 function camFocus(i, ms=4500){ if (i<0) return; const T=TBL[i]; Object.assign(CAM,{ id: null, tz: 1.16, tx: T.x, ty: T.y - 60, until: now()+ms }); }
-function camGuest(id, ms=4000, z=1.42){ Object.assign(CAM,{ id, tz: z, until: now()+ms }); }
+function camGuest(id, ms=3200, z=1.72){ Object.assign(CAM,{ id, tz: z, until: now()+ms, kick: now() }); }
 function camStage(ms=6000){ Object.assign(CAM,{ id: null, tz: 1.38, tx: 340, ty: 690, until: now()+ms }); }
-// zoom + đèn rọi vào khách vừa tương tác (force: quà, gọi tên; còn lại cách nhau ≥ 6 giây)
-function spot(id, label, ms=3800, force){ const t=now();
-  if (!force && ((S.spot && t<S.spot.until) || t-S.spotLast<6000 || t<S.danceCam)) return;
+// zoom giật + đèn rọi vào khách vừa tương tác (force: quà, gọi tên, thắng; còn lại cách nhau ≥ 3,5 giây)
+function spot(id, label, ms=3200, force){ const t=now();
+  if (!force && ((S.spot && t<S.spot.until) || t-S.spotLast<3500 || t<S.danceCam)) return;
   if (!S.anchor.get(id)) return;
   S.spot={ id, label, t, until: t+ms }; S.spotLast=t; camGuest(id, ms); }
 function camTick(t){
   if (t > CAM.until) { CAM.id = null; CAM.tz = 1.04 + .015*Math.sin(t/9000); CAM.tx = CX + 14*Math.sin(t/13000); CAM.ty = 880 + 12*Math.cos(t/11000); }
   else if (CAM.id) { const a=S.anchor.get(CAM.id); if (a) { CAM.tx=a.x; CAM.ty=a.y+70; } }
-  CAM.z += (CAM.tz-CAM.z)*.04; CAM.fx += (CAM.tx-CAM.fx)*.04; CAM.fy += (CAM.ty-CAM.fy)*.04;
-  const z=CAM.z, mx=CX*(1-1/z), my=640*(1-1/z);   // luôn phủ kín khung
+  const sp=CAM.id?.09:.04; CAM.z += (CAM.tz-CAM.z)*sp; CAM.fx += (CAM.tx-CAM.fx)*sp; CAM.fy += (CAM.ty-CAM.fy)*sp;
+  const ka=t-(CAM.kick||-1e9), pop=ka<450?.14*Math.sin(Math.PI*ka/450):0, sh=ka<320?(1-ka/320)*4:0;
+  const z=CAM.z+pop, mx=CX*(1-1/z), my=640*(1-1/z);   // luôn phủ kín khung
+  if (sh) x.translate((Math.random()-.5)*sh*2,(Math.random()-.5)*sh*2);
   const fx=clamp(CAM.fx,CX-mx,CX+mx), fy=clamp(CAM.fy,640-my,640+my); CAM.cx=fx; CAM.cy=fy;
   x.translate(CX,640); x.scale(z,z); x.translate(-fx,-fy);
 }
@@ -446,14 +448,20 @@ function spotFx(t){
   const age=t-sp.t, k=clamp(Math.min(age/400,(sp.until-t)/500),0,1), z=CAM.z;
   const sx=CX+(a.x-CAM.cx)*z, sy=640+(a.y+34-CAM.cy)*z, r=70*z;
   x.save(); x.globalAlpha=k;
-  x.fillStyle=rg(sx,sy,r*.8,r*3.4,[[0,'rgba(8,0,16,0)'],[1,'rgba(8,0,16,.62)']]); x.fillRect(0,0,W,H);
+  x.fillStyle=rg(sx,sy,r*.75,r*2.3,[[0,'rgba(8,0,16,0)'],[1,'rgba(8,0,16,.66)']]); x.fillRect(0,0,W,H);
   x.globalCompositeOperation='lighter'; x.fillStyle=rg(sx,sy,0,r*1.1,[[0,'rgba(255,230,160,.22)'],[1,'rgba(255,230,160,0)']]); x.fillRect(sx-r*1.2,sy-r*1.2,r*2.4,r*2.4);
   x.globalCompositeOperation='source-over';
   const ring=(age%1100)/1100; x.strokeStyle=GOLD; x.lineWidth=3; x.globalAlpha=k*(1-ring); x.beginPath(); x.arc(sx,sy,r*.62+ring*26,0,7); x.stroke();
+  if (age<550) { const e=age/550; x.globalAlpha=(1-e)*.9; x.strokeStyle='#fff'; x.lineWidth=6*(1-e)+1; x.beginPath(); x.arc(sx,sy,r*.4+e*r*1.6,0,7); x.stroke();
+    x.globalAlpha=(1-e)*.25; x.fillStyle='#fff6d0'; x.fillRect(0,0,W,H); }
+  if (age<1100) { const e=age/1100; x.globalAlpha=1-e; for (let i=0;i<12;i++) { const an=i/12*Math.PI*2+sp.t%7, d=r*.5+e*r*1.5, px=sx+Math.cos(an)*d, py=sy+Math.sin(an)*d, rr2=(i%2?5:8)*(1-e*.5);
+      x.fillStyle=i%3?GOLD:i%2?PINK:CYAN; x.beginPath(); for (let j=0;j<8;j++){ const aa=j*Math.PI/4, rad=j%2?rr2*.4:rr2; x.lineTo(px+Math.cos(aa)*rad,py+Math.sin(aa)*rad);} x.closePath(); x.fill(); } }
   x.globalAlpha=k; const u=S.seats.find(z=>z&&z.id===sp.id)||S.dancers.find(d=>d.id===sp.id), nm=u?short(u.name,14):'', lb=short(sp.label||'',30);
-  const cy=Math.min(sy+r*1.05,H-90); x.font=`800 17px ${SANS}`; const w=Math.max(x.measureText(nm).width, (x.font=`600 13px ${SANS}`, x.measureText(lb).width))+34;
-  const cxp=clamp(sx,w/2+8,W-w/2-8); x.fillStyle='rgba(40,6,56,.94)'; rr(cxp-w/2,cy,w,lb?50:32,14); x.fill(); x.strokeStyle=GOLD; x.lineWidth=2; x.stroke();
-  txt(nm,cxp,cy+22,`800 17px ${SANS}`,'#ffe27a'); if (lb) txt(lb,cxp,cy+41,`600 13px ${SANS}`,'#fff');
+  x.globalAlpha=k; const pc=age<300?1+.25*Math.sin(Math.PI*age/300):1;   // thẻ tên nảy lên
+  const cy=Math.min(sy+r*1.05,H-100); x.font=`800 21px ${SANS}`; const w=Math.max(x.measureText(nm).width, (x.font=`700 14px ${SANS}`, x.measureText(lb).width))+40;
+  const cxp=clamp(sx,w/2+8,W-w/2-8); x.save(); x.translate(cxp,cy+29); x.scale(pc,pc); x.translate(-cxp,-cy-29);
+  x.shadowColor=PINK; x.shadowBlur=18; x.fillStyle='rgba(40,6,56,.95)'; rr(cxp-w/2,cy,w,lb?58:36,16); x.fill(); x.shadowBlur=0; x.strokeStyle=GOLD; x.lineWidth=2.5; x.stroke();
+  txt(nm,cxp,cy+25,`800 21px ${SANS}`,'#ffe27a','center',null,{sh:[GOLD,8]}); if (lb) txt(lb,cxp,cy+47,`700 14px ${SANS}`,'#fff'); x.restore();
   x.restore();
 }
 // ---------------- ô camera chủ quán (?cam=1 hoặc ?cam=x,y,w,h) ----------------
@@ -604,6 +612,7 @@ function handle(m){
     case 'pollend': S.poll = { q: m.q, a: m.a, n: m.n, win: m.win, end: 0, endAt: Date.now() }; break;
     case 'dance': { const old = new Map(S.dancers.map(z => [z.id, z])); S.dancers = m.dancers.map(z => ({ ...z, t: old.get(z.id)?.t ?? t, end: Date.now() + z.left }));
       const d = S.dancers.find(z => z.id === m.id) || m.dancers[0]; S.danceCam = t + 6000;
+      setTimeout(() => spot(d.id, 'lên sân khấu quẩy!', 3200, true), 2600);
       S.bigQ.push({ k: 'win', title: `${short(d.name, 12)} lên sân khấu!`, sub: 'Nhảy cùng Ngân · cả đảo thả tim cổ vũ', size: 46, dur: 4200 });
       S.spot = null; camStage(6000); break; }
     case 'danceend': { const sl = DSLOT[(S.dancers.find(z => z.id === m.id) || {}).slot || 0];
@@ -618,13 +627,13 @@ function handle(m){
       S.bigQ.push({ k: 'win', title: ti, sub: w.k === 'vui' ? 'Cả bàn lên Bàn VIP · chị Hằng hát chúc' : `${fmt(w.n)} ${w.k === 'ott' ? 'ván thắng' : 'lần dzô'}`, size: 46, dur: 5500 });
       if (w.k === 'vui') { S.tcheer.set(w.table, t + 5000); camFocus(w.table); } S.sing = t + 7000; break; }
     case 'quiz': spot(m.id, 'trả lời đúng!', 4000, true); S.bigQ.push({ k: 'win', title: `${short(m.name, 12)} đúng rồi!`, sub: `“${short(m.a, 30)}” · cả đảo vỗ tay!`, size: 44, dur: 4500 }); S.cheer.set(m.id, t + 3000); break;
-    case 'ott': { const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: `${m.you} · ${m.res === 'thang' ? 'THẮNG' : m.res === 'thua' ? 'thua' : 'hòa'}`, cl: m.res === 'thang' ? LIME : '#fff', size: 14 }); break; }
+    case 'ott': { if (m.res === 'thang') spot(m.id, `thắng chị Hằng · ${m.you}!`, 3200, true); const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: `${m.you} · ${m.res === 'thang' ? 'THẮNG' : m.res === 'thua' ? 'thua' : 'hòa'}`, cl: m.res === 'thang' ? LIME : '#fff', size: 14 }); break; }
     case 'dzo': { S.dzo = m.n; const c = S.combo; c.n = t - c.t < 2600 ? c.n + 1 : 1; c.t = t; c.name = m.name; clink();
       if (m.table >= 0) S.tcheer.set(m.table, t + 1400); S.cheer.set(m.id, t + 1600); const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: 'Dzô!', cl: GOLD, size: 15 }); if (c.n === 6) spot(m.id, `DZÔ ×${c.n} · đang cháy!`); break; }
-    case 'call': assign(m.server, { table: m.table, dish: null }); { const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: 'Em ơi!', cl: '#ffd0f0', size: 14 }); } break;
+    case 'call': spot(m.id, 'gọi em ơi!'); assign(m.server, { table: m.table, dish: null }); { const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: 'Em ơi!', cl: '#ffd0f0', size: 14 }); } break;
     case 'bill': { const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y - 10, text: 'Hóa đơn: 100% vui vẻ', cl: GOLD, size: 14 }); break; }
     case 'chat': if (m.text) { S.bubbles.set(m.id, { text: m.text, t }); spot(m.id, `“${short(m.text, 24)}”`); } break;
-    case 'like': { S.likes = m.total || S.likes; S.likeHit = t; if (m.goal) S.goal = m.goal; const p = at(m.id);
+    case 'like': { S.likes = m.total || S.likes; S.likeHit = t; if (m.goal) S.goal = m.goal; const p = at(m.id); if (m.count >= 5) spot(m.id, `thả ${m.count} tim cho quán ♥`);
       for (let k = 0; k < Math.min(5, 1 + Math.floor(m.count / 3)); k++) S.hearts.push({ t: t + k * 120, x: p.x + (Math.random() - .5) * 16, y: p.y, s: 13 + Math.random() * 7, ph: Math.random() * 6 });
       if (S.dancers.length) { for (const d of S.dancers) d.likes = (d.likes || 0) + (m.count || 1); const dx = DSLOT[S.dancers[Math.floor(Math.random() * S.dancers.length)].slot || 0][0]; for (let k = 0; k < 3; k++) S.hearts.push({ t: t + k * 140, x: dx + (Math.random() - .5) * 50, y: 650, s: 15 + Math.random() * 8, ph: Math.random() * 6 }); }
       if (S.hearts.length > 60) S.hearts.splice(0, S.hearts.length - 60); break; }
