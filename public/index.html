@@ -762,6 +762,17 @@ function frame(){
   x.restore();
   frameRest(t,K,ca);
 }
+// phụ đề bài giảng (lời an lạc / chuyện đời) trên sân, giữ thêm 4 giây sau câu để câu kế nối liền không nháy
+function drawTalk(t){
+  const c=S.talkCap; if(!c) return;
+  const a=Math.min(1,(t-c.t)/400, c.end?Math.max(0,1-(t-c.end-4000)/600):1); if(a<=0){ if(c.end) S.talkCap=null; return; }
+  const F=`italic 600 20px ${SERIF}`, ls=wrap(c.text,600,F).slice(0,3), h=40+ls.length*27, Y=1090;
+  x.save(); x.globalAlpha=a;
+  x.fillStyle='rgba(38,9,2,.8)'; rr(30,Y,W-60,h,16); x.fill(); x.strokeStyle='rgba(232,176,74,.75)'; x.lineWidth=1.5; x.stroke();
+  txt(`✦  ${(c.k||'').toUpperCase()} · ${c.title}  ✦`,CX,Y+24,`800 13px ${SANS}`,'#ffd98a','center',null,{spacing:2});
+  ls.forEach((l,i)=>txt(l,CX,Y+52+i*27,F,'#fff4dc','center',['rgba(30,6,0,.85)',3]));
+  x.restore();
+}
 // ---------------- cảnh núi sống động ----------------
 // thác nước, nến đỏ, đèn đá trong ảnh nền (toạ độ cảnh)
 const FALLS = [{x0:74,x1:110,y0:505,y1:725},{x0:580,x1:648,y0:540,y1:735}];
@@ -945,6 +956,7 @@ function frameRest(t,K,ca){
   if(!S.que&&!bigBusy()) drawInfo(t);
   drawCombo(t);
   drawSegText(t);
+  drawTalk(t);
 
   // đèn lồng cầu an bay lên
   S.lanterns=S.lanterns.filter(l=>t-l.t<7000);
@@ -1054,7 +1066,11 @@ function bell(vol=.5, f=196){
 }
 function duck(on){ if(!AC) return; bgGain.gain.cancelScheduledValues(AC.currentTime); bgGain.gain.linearRampToValueAtTime(on?.18:.55, AC.currentTime+.3); }
 async function speak(m){
-  const ack = () => ws && ws.readyState===1 && ws.send(JSON.stringify({t:'spoken',id:m.id}));
+  // bài giảng lúc vắng: hiện phụ đề câu đang đọc; câu khác chen vào thì ẩn phụ đề
+  if (m.kind==='talk' && m.meta) S.talkCap={...m.meta,text:m.text,t:now(),end:0};
+  else if (S.talkCap && !S.talkCap.end) S.talkCap.end=now()-3000;
+  const ack0 = () => ws && ws.readyState===1 && ws.send(JSON.stringify({t:'spoken',id:m.id}));
+  const ack = () => { if (m.kind==='talk' && S.talkCap && S.talkCap.text===m.text) S.talkCap.end=now(); ack0(); };
   if (!m.url || !AC) { setTimeout(ack, 1200 + m.text.length*55); return; }
   try {
     const buf = await (await fetch(m.url)).arrayBuffer();
