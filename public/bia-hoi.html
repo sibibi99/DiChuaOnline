@@ -66,7 +66,10 @@ function head(X,Y,r,u,ring='#fff3d6'){
 const S = { seats: new Array(32).fill(null), top: [], dzoTop: [], likes: 0, dzo: 0, goal: { n: 0, target: 300 },
   seg: { key: 'vui', name: '', sub: '', end: Date.now(), next: '' }, mg: { k: 'vui', rows: [] }, orders: [], vip: -1,
   bubbles: new Map(), cheer: new Map(), tcheer: new Map(), floats: [], hearts: [], toasts: [], bigQ: [], big: null,
-  combo: { n: 0, t: -1e9, name: '' }, anchor: new Map(), tdish: new Map(), sing: 0, hype: 0, ticker: '' };
+  combo: { n: 0, t: -1e9, name: '' }, anchor: new Map(), tdish: new Map(), sing: 0, hype: 0, ticker: '',
+  act: new Map(), nudge: new Map(), poll: null };
+// khách đã tương tác trong 10 phút thì sáng, ngồi im thì mờ (đang được gọi tên thì sáng)
+const lit = (u, t) => Math.max(S.act.get(u.id) || 0, u.act || 0) > Date.now() - 600000 || (S.nudge.get(u.id) || 0) > t;
 // 8 bàn: hàng sau 2 bàn (2 bên sân khấu), 2 hàng trước 3 bàn
 const ROWS = [{ y: 822, s: .74, xs: [140, 580] }, { y: 968, s: .88, xs: [132, 360, 588] }, { y: 1122, s: 1.02, xs: [112, 360, 608] }];
 const TBL = []; ROWS.forEach(r => r.xs.forEach(tx => TBL.push({ x: tx, y: r.y, s: r.s })));
@@ -174,10 +177,12 @@ function guest(X,Y,s,u,t,o={}){
   const nm=short(u.name), f=`800 ${Math.round(10.5*Math.min(1.1,s+.15))}px ${SANS}`; x.font=f; const w=x.measureText(nm).width+10;
   x.fillStyle=o.vip?'rgba(150,20,90,.92)':'rgba(15,6,26,.8)';rr(X-w/2,ay-r-17*s-4,w,15,7.5);x.fill();txt(nm,X,ay-r-17*s+7,f,o.vip?'#ffe27a':'#fff');
 }
+function gst(X,Y,s,u,t,o){ x.save(); if(!lit(u,t)&&!o.cheer) x.globalAlpha=.4; guest(X,Y,s,u,t,o); x.restore();
+  const n=(S.nudge.get(u.id)||0)-t; if(n>0){ const a=S.anchor.get(u.id); if(a){ const p=(t%900)/900; x.save();x.strokeStyle=GOLD;x.lineWidth=3;x.globalAlpha=1-p;x.beginPath();x.arc(a.x,a.y+35*s,18*s+p*22,0,7);x.stroke();x.restore(); } } }
 function table(i,t,big){
   const T=TBL[i], {x:X,y:Y,s}=T, rim=RIM[i%3], vip=S.vip===i, tc=(S.tcheer.get(i)||0)>t;
   const at = k => { const u=S.seats[i*4+k]; return u ? u : null; };
-  for(let k=0;k<2;k++){ const u=at(k), [dx,dy]=SEATS[k]; if(u) guest(X+dx*s,Y+dy*s,s*.9,u,t,{cheer:big||tc||(S.cheer.get(u.id)||0)>t,vip}); else stool(X+dx*s,Y+dy*s,s*.9,'rgba(120,90,160,.5)'); }
+  for(let k=0;k<2;k++){ const u=at(k), [dx,dy]=SEATS[k]; if(u) gst(X+dx*s,Y+dy*s,s*.9,u,t,{cheer:big||tc||(S.cheer.get(u.id)||0)>t,vip}); else stool(X+dx*s,Y+dy*s,s*.9,'rgba(120,90,160,.5)'); }
   if (vip) glow(X,Y-30*s,95*s,'rgba(255,215,90,.32)','rgba(255,200,60,0)');
   glow(X,Y,60*s,rim+'40',rim+'00');
   x.fillStyle='#2a2236';x.fillRect(X-3*s,Y-30*s,6*s,30*s);x.fillRect(X-22*s,Y-3*s,44*s,4*s);
@@ -187,7 +192,7 @@ function table(i,t,big){
   if (S.seats.slice(i*4,i*4+4).some(Boolean) && !tc && !big) { mug(X+14*s,Y-33*s,s); mug(X+26*s,Y-30*s,s*.9); }
   x.fillStyle='rgba(10,4,18,.85)';rr(X-13*s,Y-14*s,26*s,13*s,6*s);x.fill();txt('B'+(i+1),X,Y-4.5*s,`800 ${Math.round(9.5*s)}px ${SANS}`,vip?GOLD:rim);
   if (vip) { const cy=Y-118*s; x.fillStyle=GOLD;x.beginPath();x.moveTo(X-16,cy);x.lineTo(X-19,cy-16);x.lineTo(X-8,cy-8);x.lineTo(X,cy-22);x.lineTo(X+8,cy-8);x.lineTo(X+19,cy-16);x.lineTo(X+16,cy);x.closePath();x.fill(); }
-  for(let k=2;k<4;k++){ const u=at(k), [dx,dy]=SEATS[k]; if(u) guest(X+dx*s,Y+dy*s,s,u,t,{cheer:big||tc||(S.cheer.get(u.id)||0)>t,vip}); else stool(X+dx*s,Y+dy*s,s,'rgba(120,90,160,.5)'); }
+  for(let k=2;k<4;k++){ const u=at(k), [dx,dy]=SEATS[k]; if(u) gst(X+dx*s,Y+dy*s,s,u,t,{cheer:big||tc||(S.cheer.get(u.id)||0)>t,vip}); else stool(X+dx*s,Y+dy*s,s,'rgba(120,90,160,.5)'); }
 }
 
 // ---------------- nữ phục vụ + vũ công (dáng người lớn, đầm trễ vai, bốt; không hở hang) ----------------
@@ -337,6 +342,22 @@ function hudDyn(t){
     txt(i?String(i+1):'▶',PR.x+20,y+16,`800 11px ${SANS}`,i?'#d8c8ff':LIME);txt(short(o.name,10),PR.x+34,y+16,`800 12px ${SANS}`,i?'#fff':'#ffe27a','left');
     const r=i?o.dishName:`${o.dishName} · ${SV[o.server]||''}`;txt(r,PR.x+PR.w-12,y+16,fit(r,i?84:100,10.5,SANS,'700'),'#bff6ff','right');});
 }
+// câu hỏi nhanh: gõ 1 hoặc 2
+function pollPanel(t,top){
+  const P=S.poll; if(!P) return top; const done=P.win!==undefined, age=Date.now()-(P.endAt||0);
+  if (done && age>7000) { S.poll=null; return top; }
+  const bx=240,bw=240,by=top+8,h=112, tot=P.n[0]+P.n[1], left=Math.max(0,Math.ceil((P.end-Date.now())/1000));
+  x.fillStyle='rgba(30,8,10,.9)';rr(bx,by,bw,h,12);x.fill();x.strokeStyle=GOLD;x.lineWidth=2;x.stroke();
+  const hd=done?'KẾT QUẢ':`CÂU HỎI NHANH · ${left}s`; txt(hd,CX,by+19,`800 12.5px ${SANS}`,GOLD,'center',null,{sp:1});
+  txt(P.q,CX,by+40,fit(P.q,bw-16,14,SANS),'#fff');
+  P.a.forEach((a,i)=>{ const y=by+50+i*24, k=tot?P.n[i]/tot:0, w=done&&P.win===i, cl=w?LIME:i?CYAN:PINK;
+    x.fillStyle='rgba(255,255,255,.1)';rr(bx+12,y,bw-24,19,9.5);x.fill();x.fillStyle=cl+'aa';rr(bx+12,y,Math.max(19,(bw-24)*k),19,9.5);x.fill();
+    txt(`${i+1}`,bx+24,y+14,`800 13px ${SANS}`,'#fff');txt(a,bx+38,y+14,fit(a,120,12.5,SANS),'#fff','left');
+    txt(tot?`${Math.round(k*100)}%`:'0',bx+bw-20,y+14,`800 12px ${SANS}`,'#fff','right'); });
+  const ft=done?(tot?`${fmt(tot)} người đã chọn`:'Chưa ai chọn · lượt sau nhé!'):'Gõ 1 hoặc 2 vào bình luận!';
+  txt(ft,CX,by+h-8,`700 12px ${SANS}`,done?'#ffd0f0':LIME,'center',null,done?{}:{a:.65+.35*Math.sin(t/220)});
+  return by+h;
+}
 // bảng minigame giữa (dưới thanh tim)
 function mgPanel(t){
   const m=S.mg||{}, bx=240, by=288, bw=240; let h=96;
@@ -427,7 +448,7 @@ function frame(){
   x.restore();
   // lớp chữ (không theo camera)
   blit(HUD); hudDyn(t);
-  const mgBottom=mgPanel(t);
+  const mgBottom=pollPanel(t,mgPanel(t));
   // thẻ gọi món (xếp hàng, mỗi thẻ 4,5 giây)
   if (!S.toast && S.toasts.length) S.toast={...S.toasts.shift(),t};
   if (S.toast) { const o=S.toast, age=t-o.t, a=clamp(Math.min(age/250,(4500-age)/400),0,1); if (age>4500) S.toast=null; else {
@@ -523,10 +544,15 @@ const setSeg = g => { S.seg = { ...g, end: Date.now() + (g.left || 0) }; };
 const at = id => S.anchor.get(id) || { x: CX, y: 900 };
 function handle(m){
   const t = now();
+  if (m.id && /^(chat|dzo|like|order|ott|quiz|call|bill|share|pollv)$/.test(m.t)) S.act.set(m.id, Date.now());
   switch (m.t) {
     case 'ver': checkVer(m.ver); break;
     case 'snapshot': checkVer(m.ver); Object.assign(S, { seats: m.seats, top: m.top || [], dzoTop: m.dzoTop || [], likes: m.likes || 0, dzo: m.dzo || 0, goal: m.goal || S.goal, orders: m.orders || [], vip: m.vip ?? -1, ticker: m.ticker || '' });
-      if (m.seg) setSeg(m.seg); if (m.mg) S.mg = m.mg; break;
+      if (m.seg) setSeg(m.seg); if (m.mg) S.mg = m.mg; S.poll = m.poll ? { ...m.poll, end: Date.now() + m.poll.left } : null; break;
+    case 'poll': S.poll = { ...m.poll, end: Date.now() + m.poll.left }; break;
+    case 'pollv': { if (S.poll) S.poll.n = m.n; const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: `Chọn ${m.c + 1}`, cl: m.c ? CYAN : PINK, size: 14 }); S.cheer.set(m.id, t + 1200); break; }
+    case 'pollend': S.poll = { q: m.q, a: m.a, n: m.n, win: m.win, end: 0, endAt: Date.now() }; break;
+    case 'nudge': { S.nudge.set(m.id, t + 9000); const p = at(m.id); S.floats.push({ t: t + 300, x: p.x, y: p.y - 6, text: 'Gọi bạn đó!', cl: GOLD, size: 15 }); break; }
     case 'seats': S.seats = m.seats; break;
     case 'seg': setSeg(m.seg); if (m.mg) S.mg = m.mg; S.bigQ.push({ k: 'seg', title: m.seg.name, sub: m.seg.sub, size: 46, dur: 4200 }); break;
     case 'mg': S.mg = m.mg; break;
