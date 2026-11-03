@@ -559,7 +559,8 @@ function drawFx(t){
     x.restore();
     if(age<900){x.save();x.globalAlpha=a*(1-age/900)*.6;x.fillStyle='#fff3c0';x.fillRect(0,0,W,H);x.restore();}
     glow(HALO.x,HALO.y,300,'rgba(255,230,150,.45)','rgba(255,200,90,0)');
-    band('PHẬT QUANG PHỔ CHIẾU','Cả chánh điện cùng lạy · cảm ơn '+f.name,a);
+    band('PHẬT QUANG PHỔ CHIẾU', f.crowd ? (f.viewers ? `${f.viewers.toLocaleString('vi-VN')} người cùng về chánh điện · cả điện cùng lạy` : `Đại chúng về đông · ${f.joins} vị vừa vào chánh điện`)
+      : 'Cả chánh điện cùng lạy · cảm ơn '+f.name,a);
   } else if(f.k==='goal'){
     if(age<700){x.save();x.globalAlpha=a*(1-age/700)*.45;x.fillStyle='#ffd0da';x.fillRect(0,0,W,H);x.restore();}
     band('ĐẠI CHÚNG LỄ PHẬT',`Đã dâng đủ ${(f.target||300).toLocaleString('vi-VN')} tim · cả chánh điện cùng lạy`,a);
@@ -951,6 +952,7 @@ function handle(m){
     case 'stagemin': S.stageMin=m.stageMin; buildStatic(); break;   // ngưỡng xu đổi theo độ đông
     case 'gomo': { S.mo=m.n; mo(); const c=S.combo; c.n = t-c.t<2600 ? c.n+1 : 1; c.t=t; c.name=m.name;
       const p=S.anchor.get(m.id); if(p) S.floats.push({t,x:p.x,y:p.y,icon:'mo',text:'+1',size:15}); S.bows.set(m.id,t); maybeVisit(m.id,t); break; }
+    case 'crowd': S.bigQ.unshift({k:'pq',crowd:true,joins:m.joins,viewers:m.viewers}); break;   // người vào đông: Phật quang phổ chiếu
     case 'goaldone': if (m.goal) S.goal=m.goal; S.bigQ.unshift({k:'goal',target:m.target}); break;   // đủ tim: chen lên đầu hàng hiệu ứng
     case 'levelup': S.toasts.push({t,icon:'qua',l1:`${m.name} lên cấp ${m.title}`,l2:'Chúc mừng bạn lên cấp mới'}); break;
     case 'rituals': S.rituals=m.rituals; break;
