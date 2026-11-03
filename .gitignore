@@ -9,3 +9,7 @@ demo-out/
 
 # nhạc nền overlay (file lớn, chép tay khi cài máy mới)
 public/audio/
+
+# nhạc nền sếp tự bỏ vào (có bản quyền riêng), chỉ giữ README
+music/*
+!music/README.md

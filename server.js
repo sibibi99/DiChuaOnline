@@ -3,7 +3,6 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { WebSocketServer } = require('ws');
-const { Room } = require('./lib/room');
 const { VoiceEngine, CACHE_DIR } = require('./lib/voice');
 
 // CHUA_CONFIG=<đường dẫn> + PORT=<cổng>: chạy thêm 1 server thử song song server live
@@ -11,7 +10,10 @@ const cfgFile = process.env.CHUA_CONFIG || (fs.existsSync(path.join(__dirname, '
 const cfg = JSON.parse(fs.readFileSync(path.resolve(__dirname, cfgFile), 'utf8'));
 if (process.env.PORT) cfg.port = +process.env.PORT;
 if (process.env.VOICE_ENGINE) cfg.voice.engine = process.env.VOICE_ENGINE;
-console.log('Cấu hình:', cfgFile);
+// GAME=bia-hoi (hoặc "game" trong config): chạy Bia Hơi Đảo Thần Tiên thay Chùa Online, cùng cổng / cùng link nguồn
+const GAME = process.env.GAME || cfg.game || 'chua';
+const { Room } = require(GAME === 'bia-hoi' ? './lib/bia-hoi/room' : './lib/room');
+console.log('Cấu hình:', cfgFile, '| game:', GAME);
 
 const engine = new VoiceEngine(cfg.voice);
 const PLATFORMS = ['tiktok', 'youtube', 'facebook'];
@@ -28,7 +30,7 @@ for (const p of PLATFORMS) {
   else if (p === 'facebook') require('./connectors/facebook')(rooms[p], pc);
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.m4a': 'audio/mp4', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg' };
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   const seg = u.pathname.split('/').filter(Boolean);
@@ -45,6 +47,17 @@ const server = http.createServer((req, res) => {
   }
   // nhạc nền lặp của overlay: public/audio/<file>
   if (seg[0] === 'audio' && seg[1] && /^[\w.-]+$/.test(seg[1])) return sendFile(res, path.join(__dirname, 'public', 'audio', seg[1]));
+  // nhạc nền sếp tự bỏ vào thư mục music/ (nhạc có quyền sử dụng): /music = danh sách, /music/<tệp> = phát
+  if (seg[0] === 'music') {
+    const dir = path.join(__dirname, 'music');
+    if (!seg[1]) {
+      let l = []; try { l = fs.readdirSync(dir).filter(f => /\.(mp3|ogg|m4a|wav)$/i.test(f)); } catch {}
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' }); return res.end(JSON.stringify(l));
+    }
+    let f = ''; try { f = decodeURIComponent(seg[1]); } catch {}
+    if (!f || /[\\/]|\.\./.test(f)) { res.writeHead(400); return res.end(); }
+    return sendFile(res, path.join(dir, f));
+  }
   // Vbee gọi lại khi tạo xong (nếu vbee.webhookUrl trỏ về đây)
   if (seg[0] === 'vbee-webhook' && req.method === 'POST') {
     let b = ''; req.on('data', d => b += d); req.on('end', () => { try { engine.vbee?.webhook(JSON.parse(b)); } catch {} res.end('ok'); });
@@ -75,8 +88,9 @@ const server = http.createServer((req, res) => {
     if (seg[2] === 'gift') r.onGift(who, u.searchParams.get('gift') || 'Sư tử', 1, +(u.searchParams.get('coins') || 299));
     else if (seg[2] === 'like') r.onLike(who, +(u.searchParams.get('count') || 5));
     else if (seg[2] === 'share') r.onShare(who);
-    else if (seg[2] === 'seg') r.nextSeg();   // chuyển ngay sang khóa lễ kế (thử / người dẫn tự chuyển)
-    else r.onChat(who, u.searchParams.get('text') || 'Nam mô A Di Đà Phật');
+    else if (seg[2] === 'seg') r.nextSeg();   // chuyển ngay sang khóa lễ / minigame kế (thử / người dẫn tự chuyển)
+    else if (seg[2] === 'join') r.onJoin(who);
+    else r.onChat(who, u.searchParams.get('text') || (GAME === 'bia-hoi' ? 'dzô' : 'Nam mô A Di Đà Phật'));
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('ok');
   }
   res.writeHead(404); res.end('Không tìm thấy');
@@ -91,7 +105,7 @@ function sendFile(res, f) {
 // Phiên bản giao diện = dấu của index.html + ảnh nền. Đổi file → overlay (LIVE Studio / OBS) tự tải lại, không phải bấm tay.
 const PUB = path.join(__dirname, 'public');
 // CHUA_PAGE=<file>: server thử dùng trang khác trong public/ (sửa giao diện mới mà khung đang live không tự tải theo)
-const PAGE = process.env.CHUA_PAGE || 'index.html';
+const PAGE = process.env.CHUA_PAGE || (GAME === 'bia-hoi' ? 'bia-hoi.html' : 'index.html');
 const WATCH = [PAGE, path.join('img', 'chanh-dien.jpg')];
 function uiVersion() {
   const h = require('crypto').createHash('sha1');
@@ -124,7 +138,7 @@ for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'])
   process.on(sig, () => { for (const r of Object.values(rooms)) if (r.saveT) r.flush(); process.exit(0); });
 
 server.listen(cfg.port || 3000, () => {
-  console.log(`\nChùa Online đang chạy:`);
+  console.log(`\n${GAME === 'bia-hoi' ? 'Bia Hơi Đảo Thần Tiên' : 'Chùa Online'} đang chạy:`);
   for (const p of Object.keys(rooms)) console.log(`  ${p.padEnd(9)} → http://localhost:${cfg.port || 3000}/${p}`);
   console.log(`Giọng đọc: ${cfg.voice.enabled ? cfg.voice.engine : 'tắt'}\n`);
 });

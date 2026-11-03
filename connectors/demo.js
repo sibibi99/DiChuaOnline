@@ -17,9 +17,10 @@ module.exports = function startDemo(room, opt = {}) {
   const every = (ms, fn) => timers.push(setInterval(fn, ms / speed));
   // vào phòng dồn dập lúc đầu cho đầy chùa
   for (let i = 0; i < 22; i++) timers.push(setTimeout(() => room.onJoin(user()), (200 + i * 260) / speed));
-  every(1800, () => room.onChat(user(), pick(CHATS)));
+  const CH = room.demoChats || CHATS, GF = room.demoGifts || GIFTS;   // game khác (Bia Hơi) có câu chat / quà demo riêng
+  every(1800, () => room.onChat(user(), pick(CH)));
   every(1400, () => room.onLike(user(), 1 + Math.floor(Math.random() * 8)));
-  every(7000, () => { const [g, c] = pick(GIFTS); const n = g === 'Hoa hồng' ? 1 + Math.floor(Math.random() * 5) : 1; room.onGift(user(), g, n, c * n); });
+  every(7000, () => { const [g, c] = pick(GF); const n = g === 'Hoa hồng' ? 1 + Math.floor(Math.random() * 5) : 1; room.onGift(user(), g, n, c * n); });
   every(3000, () => room.onJoin(user()));
   every(15000, () => room.onShare(user()));
   return () => timers.forEach(t => { clearInterval(t); clearTimeout(t); });
