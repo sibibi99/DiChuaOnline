@@ -128,6 +128,21 @@ Thử quà lớn: mở `http://localhost:3000/test/tiktok/gift?gift=Sư tử&coi
 
 Server tự tìm phiên live đang chạy của Trang mỗi 60 giây, nên không cần điền ID video.
 
+### 5b. Không có token (live trang cá nhân, hoặc tài khoản Developer bị khóa): dùng tiện ích Chrome
+
+API không đọc được bình luận live của **trang cá nhân**. Khi đó dùng tiện ích trong `tools/chrome-extension`: tiện ích đọc bình luận ngay trên trang Live Producer rồi gửi về server trên chính máy này.
+
+1. Trong `config.json`: `"facebook": { "enabled": true, "demo": false, "source": "extension" }`, rồi chạy lại `start.bat`.
+2. Mở Chrome, vào `chrome://extensions`, bật **Chế độ dành cho nhà phát triển** (góc trên bên phải).
+3. Bấm **Tải tiện ích đã giải nén** (Load unpacked), chọn thư mục `tools\chrome-extension`.
+4. Ghim tiện ích 🪷 **Chùa Online** lên thanh công cụ (biểu tượng mảnh ghép → ghim).
+5. Mở (hoặc **F5**) trang Live Producer của buổi live. Bấm biểu tượng tiện ích để xem:
+   - ✓ Đã kết nối server: bấm **Gửi thử 1 bình luận**, chánh điện phải có người "Thử tiện ích".
+   - *Đang theo dõi /live/producer/…*: tiện ích đã thấy trang live.
+   - *Đã gửi: N bình luận*: số bình luận thật đã chuyển sang overlay.
+
+Lưu ý: giữ tab Live Producer mở suốt buổi live (có thể để ở tab nền). Tiện ích bỏ qua các bình luận đã có trước khi mở trang. Nếu có bình luận trên Facebook mà "Đã gửi" không tăng, nghĩa là Facebook đã đổi giao diện, cần sửa `content.js`.
+
 ## 6. Tự chạy lại khi VPS khởi động lại
 
 - Nhấn `Win + R`, gõ `shell:startup`. Tạo **shortcut** tới `start.bat`, và shortcut tới 3 file `obs64.exe` (mỗi bản OBS một cái).

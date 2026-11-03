@@ -22,6 +22,7 @@ connectors/*  ──(sự kiện chuẩn hoá)──►  lib/room.js (1 Room / n
   - `youtube.js`: `youtube-chat` (MIT), theo channelId, không cần API key.
   - `facebook.js`: Graph API, tìm live đang chạy của Page, đọc SSE `streaming-graph.facebook.com/{id}/live_comments`.
   - `demo.js`: giả lập người xem. Bật bằng `"demo": true` trong config.
+  - `"source": "extension"`: không chạy connector; tiện ích Chrome `tools/chrome-extension` (MV3) đọc DOM bình luận `[role=article]` trên Live Producer, background gửi `POST /ingest/<platform>` `{items:[{id,name,text}]}` (server chỉ nhận từ localhost). Dùng cho live trang cá nhân FB (Graph API không đọc được).
 - `lib/room.js`: trạng thái riêng mỗi nền tảng:
   - 24 chỗ ngồi thường. Khi đầy, người im lặng lâu nhất phải nhường chỗ.
   - Top 6 công đức ngồi hàng đầu.

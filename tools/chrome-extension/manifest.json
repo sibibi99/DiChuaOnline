@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Chùa Online – đọc bình luận Facebook Live",
+  "version": "1.0.0",
+  "description": "Đọc bình luận trên trang Facebook Live Producer và gửi về server Chùa Online chạy trên máy này.",
+  "permissions": ["storage"],
+  "host_permissions": ["http://localhost:3000/*", "http://127.0.0.1:3000/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    { "matches": ["https://www.facebook.com/*", "https://web.facebook.com/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ],
+  "action": { "default_popup": "popup.html", "default_title": "Chùa Online" }
+}

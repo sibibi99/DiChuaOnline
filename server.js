@@ -23,6 +23,8 @@ for (const p of PLATFORMS) {
   if (pc.demo) { require('./connectors/demo')(rooms[p], pc); console.log(`[${p}] chế độ DEMO`); }
   else if (p === 'tiktok') require('./connectors/tiktok')(rooms[p], pc);
   else if (p === 'youtube') require('./connectors/youtube')(rooms[p], pc);
+  // source "extension": bình luận do tiện ích Chrome (tools/chrome-extension) đọc từ trang live gửi về /ingest/<platform>
+  else if (pc.source === 'extension') console.log(`[${p}] chờ bình luận từ tiện ích Chrome`);
   else if (p === 'facebook') require('./connectors/facebook')(rooms[p], pc);
 }
 
@@ -46,6 +48,24 @@ const server = http.createServer((req, res) => {
   // Vbee gọi lại khi tạo xong (nếu vbee.webhookUrl trỏ về đây)
   if (seg[0] === 'vbee-webhook' && req.method === 'POST') {
     let b = ''; req.on('data', d => b += d); req.on('end', () => { try { engine.vbee?.webhook(JSON.parse(b)); } catch {} res.end('ok'); });
+    return;
+  }
+  // Tiện ích Chrome gửi bình luận: POST /ingest/facebook  {"items":[{"id","name","text"}]} — chỉ nhận từ chính máy này
+  if (seg[0] === 'ingest' && rooms[seg[1]] && req.method === 'POST') {
+    const ip = req.socket.remoteAddress || '';
+    if (!/^(::1|127\.|::ffff:127\.)/.test(ip)) { res.writeHead(403); return res.end(); }
+    let b = ''; req.on('data', d => { b += d; if (b.length > 1e6) req.destroy(); });
+    req.on('end', () => {
+      const r = rooms[seg[1]]; let n = 0;
+      try {
+        for (const it of JSON.parse(b).items || []) {
+          if (!it?.text || !it?.name) continue;
+          r.onChat({ id: String(it.id || 'fb-' + it.name), name: String(it.name).slice(0, 60) }, String(it.text).slice(0, 300)); n++;
+        }
+      } catch {}
+      if (n) { r.live = true; console.log(`[${seg[1]}] tiện ích gửi ${n} bình luận`); }
+      res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, n }));
+    });
     return;
   }
   // Thử nhanh bằng trình duyệt: /test/tiktok/gift  /test/tiktok/chat?text=...
