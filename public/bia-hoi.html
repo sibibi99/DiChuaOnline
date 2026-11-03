@@ -65,9 +65,9 @@ function head(X,Y,r,u,ring='#fff3d6'){
 // ---------------- trạng thái ----------------
 const S = { seats: new Array(32).fill(null), top: [], dzoTop: [], likes: 0, dzo: 0, goal: { n: 0, target: 300 },
   seg: { key: 'vui', name: '', sub: '', end: Date.now(), next: '' }, mg: { k: 'vui', rows: [] }, orders: [], vip: -1,
-  bubbles: new Map(), cheer: new Map(), tcheer: new Map(), floats: [], hearts: [], toasts: [], bigQ: [], big: null,
+  nganX: 360, bubbles: new Map(), cheer: new Map(), tcheer: new Map(), floats: [], hearts: [], toasts: [], bigQ: [], big: null,
   combo: { n: 0, t: -1e9, name: '' }, anchor: new Map(), tdish: new Map(), sing: 0, hype: 0, ticker: '',
-  act: new Map(), nudge: new Map(), poll: null };
+  act: new Map(), nudge: new Map(), poll: null, dancer: null, spot: null, spotLast: -1e9 };
 // khách đã tương tác trong 10 phút thì sáng, ngồi im thì mờ (đang được gọi tên thì sáng)
 const lit = (u, t) => Math.max(S.act.get(u.id) || 0, u.act || 0) > Date.now() - 600000 || (S.nudge.get(u.id) || 0) > t;
 // 8 bàn: hàng sau 2 bàn (2 bên sân khấu), 2 hàng trước 3 bàn
@@ -177,11 +177,32 @@ function guest(X,Y,s,u,t,o={}){
   const nm=short(u.name), f=`800 ${Math.round(10.5*Math.min(1.1,s+.15))}px ${SANS}`; x.font=f; const w=x.measureText(nm).width+10;
   x.fillStyle=o.vip?'rgba(150,20,90,.92)':'rgba(15,6,26,.8)';rr(X-w/2,ay-r-17*s-4,w,15,7.5);x.fill();txt(nm,X,ay-r-17*s+7,f,o.vip?'#ffe27a':'#fff');
 }
+// khách được mời lên sân khấu: đứng nhảy theo nhịp cạnh Ngân
+function dancerGuest(X,Y,s,u,b,t){
+  const h=hash(u.id), shirt=AV[(h>>3)%AV.length], ph=b%1, mv=Math.floor(b/4)%3, bo=Math.abs(Math.sin(b*Math.PI))*6;
+  x.save(); x.translate(X,Y); x.scale(s,s);
+  glow(0,-70,80,GOLD+'33',GOLD+'00');
+  x.fillStyle='rgba(0,0,0,.4)';x.beginPath();x.ellipse(0,0,24,6,0,0,7);x.fill();
+  x.translate(0,-bo);
+  const st=Math.sin(b*Math.PI)*6; x.strokeStyle='#1c1830';x.lineWidth=9;x.lineCap='round';
+  x.beginPath();x.moveTo(-7,-48);x.lineTo(-9-st,0);x.moveTo(7,-48);x.lineTo(9-st,0);x.stroke();
+  x.fillStyle=shirt;rr(-17,-100,34,56,12);x.fill();x.fillStyle='rgba(255,255,255,.18)';x.fillRect(-17,-62,34,5);
+  const sw=Math.sin(b*Math.PI*2)*.5, arm=(sx,a)=>{const ex=sx+Math.cos(a)*24, ey=-92+Math.sin(a)*24; x.beginPath();x.moveTo(sx,-92);x.lineTo(ex,ey);x.lineTo(ex+Math.cos(a-.4)*20,ey+Math.sin(a-.4)*20);x.stroke();};
+  x.strokeStyle=shirt;x.lineWidth=8;
+  if (mv===0) { arm(-15,-2.2+sw); arm(15,-.9-sw); }                 // hai tay vẫy trên cao
+  else if (mv===1) { arm(-15,Math.PI-.3+sw); arm(15,.3-sw); }        // dang tay nhún
+  else { const up=ph<.5; arm(-15,up?-1.9:2.6); arm(15,up?2.6-Math.PI:-1.2); }   // chỉ tay luân phiên
+  x.restore();
+  const hy=Y-(118+bo)*s; head(X,hy,22*s,u,GOLD);
+  const nm='★ '+short(u.name,12), f=`800 ${Math.round(13*s)}px ${SANS}`; x.font=f; const w=x.measureText(nm).width+14;
+  x.fillStyle='rgba(150,20,90,.95)';rr(X-w/2,hy-22*s-22,w,19,9.5);x.fill();txt(nm,X,hy-22*s-8,f,'#ffe27a');
+  S.anchor.set(u.id,{x:X,y:hy-22*s-30});
+}
 function gst(X,Y,s,u,t,o){ x.save(); if(!lit(u,t)&&!o.cheer) x.globalAlpha=.4; guest(X,Y,s,u,t,o); x.restore();
   const n=(S.nudge.get(u.id)||0)-t; if(n>0){ const a=S.anchor.get(u.id); if(a){ const p=(t%900)/900; x.save();x.strokeStyle=GOLD;x.lineWidth=3;x.globalAlpha=1-p;x.beginPath();x.arc(a.x,a.y+35*s,18*s+p*22,0,7);x.stroke();x.restore(); } } }
 function table(i,t,big){
   const T=TBL[i], {x:X,y:Y,s}=T, rim=RIM[i%3], vip=S.vip===i, tc=(S.tcheer.get(i)||0)>t;
-  const at = k => { const u=S.seats[i*4+k]; return u ? u : null; };
+  const at = k => { const u=S.seats[i*4+k]; return u && u.id!==S.dancer?.id ? u : null; };
   for(let k=0;k<2;k++){ const u=at(k), [dx,dy]=SEATS[k]; if(u) gst(X+dx*s,Y+dy*s,s*.9,u,t,{cheer:big||tc||(S.cheer.get(u.id)||0)>t,vip}); else stool(X+dx*s,Y+dy*s,s*.9,'rgba(120,90,160,.5)'); }
   if (vip) glow(X,Y-30*s,95*s,'rgba(255,215,90,.32)','rgba(255,200,60,0)');
   glow(X,Y,60*s,rim+'40',rim+'00');
@@ -401,15 +422,39 @@ function fireworks(t0,t){
 
 // ---------------- camera trôi + ghé bàn vừa gọi món ----------------
 const CAM = { z: 1.04, fx: CX, fy: 900, tz: 1.04, tx: CX, ty: 900, until: 0 };
-function camFocus(i, ms=4500){ if (i<0) return; const T=TBL[i]; Object.assign(CAM,{ tz: 1.16, tx: T.x, ty: T.y - 60, until: now()+ms }); }
+function camFocus(i, ms=4500){ if (i<0) return; const T=TBL[i]; Object.assign(CAM,{ id: null, tz: 1.16, tx: T.x, ty: T.y - 60, until: now()+ms }); }
+function camGuest(id, ms=4000, z=1.42){ Object.assign(CAM,{ id, tz: z, until: now()+ms }); }
+function camStage(ms=6000){ Object.assign(CAM,{ id: null, tz: 1.38, tx: 340, ty: 690, until: now()+ms }); }
+// zoom + đèn rọi vào khách vừa tương tác (force: quà, gọi tên; còn lại cách nhau ≥ 6 giây)
+function spot(id, label, ms=3800, force){ const t=now();
+  if (!force && ((S.spot && t<S.spot.until) || t-S.spotLast<6000 || (S.dancer && t<S.dancer.cam))) return;
+  if (!S.anchor.get(id)) return;
+  S.spot={ id, label, t, until: t+ms }; S.spotLast=t; camGuest(id, ms); }
 function camTick(t){
-  if (t > CAM.until) { CAM.tz = 1.04 + .015*Math.sin(t/9000); CAM.tx = CX + 14*Math.sin(t/13000); CAM.ty = 880 + 12*Math.cos(t/11000); }
+  if (t > CAM.until) { CAM.id = null; CAM.tz = 1.04 + .015*Math.sin(t/9000); CAM.tx = CX + 14*Math.sin(t/13000); CAM.ty = 880 + 12*Math.cos(t/11000); }
+  else if (CAM.id) { const a=S.anchor.get(CAM.id); if (a) { CAM.tx=a.x; CAM.ty=a.y+70; } }
   CAM.z += (CAM.tz-CAM.z)*.04; CAM.fx += (CAM.tx-CAM.fx)*.04; CAM.fy += (CAM.ty-CAM.fy)*.04;
   const z=CAM.z, mx=CX*(1-1/z), my=640*(1-1/z);   // luôn phủ kín khung
-  const fx=clamp(CAM.fx,CX-mx,CX+mx), fy=clamp(CAM.fy,640-my,640+my);
+  const fx=clamp(CAM.fx,CX-mx,CX+mx), fy=clamp(CAM.fy,640-my,640+my); CAM.cx=fx; CAM.cy=fy;
   x.translate(CX,640); x.scale(z,z); x.translate(-fx,-fy);
 }
 
+function spotFx(t){
+  const sp=S.spot; if (!sp) return; if (t>sp.until) { S.spot=null; return; }
+  const a=S.anchor.get(sp.id); if (!a) return;
+  const age=t-sp.t, k=clamp(Math.min(age/400,(sp.until-t)/500),0,1), z=CAM.z;
+  const sx=CX+(a.x-CAM.cx)*z, sy=640+(a.y+34-CAM.cy)*z, r=70*z;
+  x.save(); x.globalAlpha=k;
+  x.fillStyle=rg(sx,sy,r*.8,r*3.4,[[0,'rgba(8,0,16,0)'],[1,'rgba(8,0,16,.62)']]); x.fillRect(0,0,W,H);
+  x.globalCompositeOperation='lighter'; x.fillStyle=rg(sx,sy,0,r*1.1,[[0,'rgba(255,230,160,.22)'],[1,'rgba(255,230,160,0)']]); x.fillRect(sx-r*1.2,sy-r*1.2,r*2.4,r*2.4);
+  x.globalCompositeOperation='source-over';
+  const ring=(age%1100)/1100; x.strokeStyle=GOLD; x.lineWidth=3; x.globalAlpha=k*(1-ring); x.beginPath(); x.arc(sx,sy,r*.62+ring*26,0,7); x.stroke();
+  x.globalAlpha=k; const u=S.seats.find(z=>z&&z.id===sp.id)||S.dancer, nm=u?short(u.name,14):'', lb=short(sp.label||'',30);
+  const cy=Math.min(sy+r*1.05,H-90); x.font=`800 17px ${SANS}`; const w=Math.max(x.measureText(nm).width, (x.font=`600 13px ${SANS}`, x.measureText(lb).width))+34;
+  const cxp=clamp(sx,w/2+8,W-w/2-8); x.fillStyle='rgba(40,6,56,.94)'; rr(cxp-w/2,cy,w,lb?50:32,14); x.fill(); x.strokeStyle=GOLD; x.lineWidth=2; x.stroke();
+  txt(nm,cxp,cy+22,`800 17px ${SANS}`,'#ffe27a'); if (lb) txt(lb,cxp,cy+41,`600 13px ${SANS}`,'#fff');
+  x.restore();
+}
 // ---------------- ô camera chủ quán (?cam=1 hoặc ?cam=x,y,w,h) ----------------
 const HOSTCAM = (() => { const q=Q.get('cam'); if (!q||q==='0') return null;
   const a=q.split(',').map(Number); return a.length===4&&a.every(n=>n>=0)?{x:a[0],y:a[1],w:a[2],h:a[3]}:{x:8,y:700,w:222,h:166}; })();
@@ -431,7 +476,11 @@ function frame(){
   // cảnh (có camera)
   x.save(); camTick(t);
   blit(BG); floorFx(b); stringLights(t); lasers(t, party?6:S.seg.key==='quay'?4:2); stage(t,b);
-  lady(360,760,.92,'ngan',{pose:'dance',b:b*(S.seg.key==='quay'||party?1:1)});
+  const dn=S.dancer && Date.now()<S.dancer.end ? S.dancer : null; if (S.dancer && !dn) S.dancer=null;
+  S.nganX += ((dn?408:360)-S.nganX)*.05;
+  lady(S.nganX,760,.92,'ngan',{pose:'dance',b});
+  if (dn) { const k=clamp((t-dn.t)/600,0,1); x.save(); x.globalAlpha=k; dancerGuest(300,778+(1-k)*30,1.05,dn,b,t); x.restore();
+    txt(`♥ ${fmt(dn.likes||0)} tim cổ vũ · còn ${Math.ceil((dn.end-Date.now())/1000)}s`,300,800,`800 13px ${SANS}`,'#ffd0f0','center',['rgba(40,0,50,.9)',3]); }
   const singing = t < S.sing;
   lady(522,796,.78,'hang',{pose:party?'dance':singing?'mic':'wave',b});
   S.anchor.clear();
@@ -447,6 +496,7 @@ function frame(){
   for(const [id,bb] of S.bubbles){const a=S.anchor.get(id), age=t-bb.t; if(!a||age>5000){if(age>5000)S.bubbles.delete(id);continue;} bubble(a.x,a.y,bb.text,age>4400?(5000-age)/600:1);}
   x.restore();
   // lớp chữ (không theo camera)
+  spotFx(t);
   blit(HUD); hudDyn(t);
   const mgBottom=pollPanel(t,mgPanel(t));
   // thẻ gọi món (xếp hàng, mỗi thẻ 4,5 giây)
@@ -456,7 +506,7 @@ function frame(){
     ico(o.dish,272,y+30,1.6);txt(`Bàn ${o.table+1} · ${short(o.name,10)}`,296,y+26,fit(`Bàn ${o.table+1} · ${short(o.name,10)}`,176,16,SANS),'#ffd0f0','left');txt(`gọi ${o.dishName}`,296,y+46,fit(`gọi ${o.dishName}`,176,15,SANS),'#fff','left');
     txt({thu:'Thu mang ra ngay',mai:'Mai mang ra ngay',all:'Cả quán phục vụ!'}[o.server]||'',CX,y+70,`italic 600 13px ${SANS}`,'#bff6ff');txt('cảm ơn bạn ủng hộ quán',CX,y+87,`italic 600 13px ${SANS}`,'#bff6ff');x.restore(); } }
   // combo DZÔ
-  const cb=S.combo, ca=t-cb.t; if (ca<2600 && cb.n>=1 && !party) burst(CX,600-Math.min(ca,200)/20,`DZÔ ×${cb.n}`,Math.min(64,40+cb.n*2),`${short(cb.name,14)} vừa hô`,ca>2000?(2600-ca)/600:1);
+  const cb=S.combo, ca=t-cb.t; if (ca<2600 && cb.n>=1 && !party) burst(CX,(S.dancer?900:600)-Math.min(ca,200)/20,`DZÔ ×${cb.n}`,Math.min(64,40+cb.n*2),`${short(cb.name,14)} vừa hô`,ca>2000?(2600-ca)/600:1);
   // khoảnh khắc lớn
   if (S.big) { const g=S.big, age=t-g.t, a=clamp(Math.min(age/300,(g.dur-age)/500),0,1);
     if (g.k==='quan'||g.k==='goal') { x.fillStyle=`rgba(20,0,30,${.3*a})`;x.fillRect(0,0,W,H); fireworks(g.t,t); }
@@ -548,11 +598,16 @@ function handle(m){
   switch (m.t) {
     case 'ver': checkVer(m.ver); break;
     case 'snapshot': checkVer(m.ver); Object.assign(S, { seats: m.seats, top: m.top || [], dzoTop: m.dzoTop || [], likes: m.likes || 0, dzo: m.dzo || 0, goal: m.goal || S.goal, orders: m.orders || [], vip: m.vip ?? -1, ticker: m.ticker || '' });
-      if (m.seg) setSeg(m.seg); if (m.mg) S.mg = m.mg; S.poll = m.poll ? { ...m.poll, end: Date.now() + m.poll.left } : null; break;
+      if (m.seg) setSeg(m.seg); if (m.mg) S.mg = m.mg; S.dancer = m.dancer ? { ...m.dancer, t, cam: 0, end: Date.now() + m.dancer.left } : null; S.poll = m.poll ? { ...m.poll, end: Date.now() + m.poll.left } : null; break;
     case 'poll': S.poll = { ...m.poll, end: Date.now() + m.poll.left }; break;
     case 'pollv': { if (S.poll) S.poll.n = m.n; const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: `Chọn ${m.c + 1}`, cl: m.c ? CYAN : PINK, size: 14 }); S.cheer.set(m.id, t + 1200); break; }
     case 'pollend': S.poll = { q: m.q, a: m.a, n: m.n, win: m.win, end: 0, endAt: Date.now() }; break;
-    case 'nudge': { S.nudge.set(m.id, t + 9000); const p = at(m.id); S.floats.push({ t: t + 300, x: p.x, y: p.y - 6, text: 'Gọi bạn đó!', cl: GOLD, size: 15 }); break; }
+    case 'dance': { const d = m.dancer; S.dancer = { ...d, t, cam: t + 6000, end: Date.now() + d.left };
+      S.bigQ.push({ k: 'win', title: `${short(d.name, 12)} lên sân khấu!`, sub: 'Nhảy cùng Ngân · cả đảo thả tim cổ vũ', size: 46, dur: 4200 });
+      S.spot = null; camStage(6000); break; }
+    case 'danceend': { if (S.dancer && S.dancer.id === m.id) S.dancer = null;
+      S.floats.push({ t, x: 300, y: 700, text: `Cảm ơn ${short(m.name, 10)} · ${fmt(m.likes)} tim`, cl: GOLD, size: 17 }); break; }
+    case 'nudge': { S.nudge.set(m.id, t + 9000); spot(m.id, 'Gọi bạn đó! Gõ dzô nào', 4500, true); const p = at(m.id); S.floats.push({ t: t + 300, x: p.x, y: p.y - 6, text: 'Gọi bạn đó!', cl: GOLD, size: 15 }); break; }
     case 'seats': S.seats = m.seats; break;
     case 'seg': setSeg(m.seg); if (m.mg) S.mg = m.mg; S.bigQ.push({ k: 'seg', title: m.seg.name, sub: m.seg.sub, size: 46, dur: 4200 }); break;
     case 'mg': S.mg = m.mg; break;
@@ -560,15 +615,16 @@ function handle(m){
       const ti = w.k === 'vui' ? `Bàn ${w.table + 1} vui nhất!` : w.k === 'ott' ? `${short(w.name, 12)} thắng chị Hằng!` : `Vua Dzô: ${short(w.name, 12)}`;
       S.bigQ.push({ k: 'win', title: ti, sub: w.k === 'vui' ? 'Cả bàn lên Bàn VIP · chị Hằng hát chúc' : `${fmt(w.n)} ${w.k === 'ott' ? 'ván thắng' : 'lần dzô'}`, size: 46, dur: 5500 });
       if (w.k === 'vui') { S.tcheer.set(w.table, t + 5000); camFocus(w.table); } S.sing = t + 7000; break; }
-    case 'quiz': S.bigQ.push({ k: 'win', title: `${short(m.name, 12)} đúng rồi!`, sub: `“${short(m.a, 30)}” · cả đảo vỗ tay!`, size: 44, dur: 4500 }); S.cheer.set(m.id, t + 3000); break;
+    case 'quiz': spot(m.id, 'trả lời đúng!', 4000, true); S.bigQ.push({ k: 'win', title: `${short(m.name, 12)} đúng rồi!`, sub: `“${short(m.a, 30)}” · cả đảo vỗ tay!`, size: 44, dur: 4500 }); S.cheer.set(m.id, t + 3000); break;
     case 'ott': { const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: `${m.you} · ${m.res === 'thang' ? 'THẮNG' : m.res === 'thua' ? 'thua' : 'hòa'}`, cl: m.res === 'thang' ? LIME : '#fff', size: 14 }); break; }
     case 'dzo': { S.dzo = m.n; const c = S.combo; c.n = t - c.t < 2600 ? c.n + 1 : 1; c.t = t; c.name = m.name; clink();
-      if (m.table >= 0) S.tcheer.set(m.table, t + 1400); S.cheer.set(m.id, t + 1600); const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: 'Dzô!', cl: GOLD, size: 15 }); break; }
+      if (m.table >= 0) S.tcheer.set(m.table, t + 1400); S.cheer.set(m.id, t + 1600); const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: 'Dzô!', cl: GOLD, size: 15 }); if (c.n === 6) spot(m.id, `DZÔ ×${c.n} · đang cháy!`); break; }
     case 'call': assign(m.server, { table: m.table, dish: null }); { const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: 'Em ơi!', cl: '#ffd0f0', size: 14 }); } break;
     case 'bill': { const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y - 10, text: 'Hóa đơn: 100% vui vẻ', cl: GOLD, size: 14 }); break; }
-    case 'chat': if (m.text) S.bubbles.set(m.id, { text: m.text, t }); break;
+    case 'chat': if (m.text) { S.bubbles.set(m.id, { text: m.text, t }); spot(m.id, `“${short(m.text, 24)}”`); } break;
     case 'like': { S.likes = m.total || S.likes; S.likeHit = t; if (m.goal) S.goal = m.goal; const p = at(m.id);
       for (let k = 0; k < Math.min(5, 1 + Math.floor(m.count / 3)); k++) S.hearts.push({ t: t + k * 120, x: p.x + (Math.random() - .5) * 16, y: p.y, s: 13 + Math.random() * 7, ph: Math.random() * 6 });
+      if (S.dancer) { S.dancer.likes = (S.dancer.likes || 0) + (m.count || 1); for (let k = 0; k < 3; k++) S.hearts.push({ t: t + k * 140, x: 300 + (Math.random() - .5) * 50, y: 650, s: 15 + Math.random() * 8, ph: Math.random() * 6 }); }
       if (S.hearts.length > 60) S.hearts.splice(0, S.hearts.length - 60); break; }
     case 'goaldone': if (m.goal) S.goal = m.goal; S.bigQ.unshift({ k: 'goal', title: 'Đảo bùng nổ!', sub: `Cả đảo đã thả đủ ${fmt(m.target)} tim · Ngân lên đồ!`, dur: 7000 }); break;
     case 'share': case 'follow': { const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y, text: m.t === 'share' ? 'Rủ bạn lên đảo!' : 'Theo dõi quán!', cl: CYAN, size: 13 }); break; }
@@ -582,7 +638,7 @@ function handle(m){
       if (m.dish === 'muc') S.sing = t + 8000;
       if (m.dish === 'ban') { S.bigQ.push({ k: 'ban', title: `Bao cả bàn ${m.table + 1}!`, sub: `Cảm ơn ${short(m.name, 16)} · món ra liên tục`, size: 52, dur: 5500 }); camFocus(m.table, 5500); S.tcheer.set(m.table, t + 5500); }
       if (m.dish === 'quan') S.bigQ.push({ k: 'quan', title: 'Bao cả đảo!', sub: `Cảm ơn ${short(m.name, 16)} · cả đảo cùng Dzô · món ra mọi bàn`, size: 64, dur: 9000 });
-      else if (m.points >= 10) camFocus(m.table, 3500);
+      else if (m.dish !== 'ban') spot(m.id, `gọi ${m.dishName} · cảm ơn bạn!`, m.points >= 10 ? 4500 : 3200, true);
       break; }
     case 'speak': speak(m); break;
   }
