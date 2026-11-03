@@ -48,7 +48,7 @@ const DEF_TITLES = [[1,'Sơ Tâm'],[10,'Tịnh Tâm'],[50,'Bồ Đề'],[100,'Ki
 const S = { temple: 'CHÙA AN LẠC', ticker: '', seats: [], top: [], niem: 0, likes: 0, rituals: DEF_RITUALS,
   goal: { n: 0, target: 300 }, mo: 0, combo: { n: 0, t: -1e9 }, titles: DEF_TITLES, fx: null,
   acts: new Map(), joins: new Map(), bows: new Map(), bubbles: new Map(), anchor: new Map(), hot: new Map(),
-  floats: [], toasts: [], petals: [], sparks: [], lanterns: [], smoke: [], lampNew: 0, que: null, bellFx: null, bigQ: [], hearts: [], likeHit: 0, likeBoost: 0,
+  floats: [], toasts: [], petals: [], sparks: [], lanterns: [], smoke: [], lampNew: 0, que: null, bellFx: null, bigQ: [], hearts: [], likeHit: 0, likeBoost: 0, likeHd: new Map(),
   next: [], stage: [], st: null, stNext: 0, stEnd: performance.now(), active: new Map(), invited: new Map(),
   col: [], theTotal: 36, seg: { key: 'le', name: 'Khóa Lễ Phật', sub: '', end: performance.now() + 480000, next: '' }, scene: { cur: 'hall', prev: null, t: -1e9 }, hd: [], visit: null, visitAt: -1e9, chantAt: 0 };
 
@@ -594,6 +594,9 @@ function hdPos(h,t,lake){
   const sx = h.x<CX ? 246+(h.x%44) : 434+(h.x%44);   // đèn sen bay 2 bên tượng, không che mặt Bồ Tát
   return { x:sx+Math.sin(k*6+h.ph)*18, y:990-k*660, s:1.2-.4*k, a:Math.min(1,k*8,(1-k)*4) };
 }
+function senHoa(s){ x.save();x.scale(s,s);
+  [[-1.1,'#e2849e'],[1.1,'#e2849e'],[-.62,'#f0a3b8'],[.62,'#f0a3b8'],[-.2,'#f9c6d3'],[.2,'#f9c6d3']].forEach(([a,cl])=>{x.save();x.rotate(a);x.fillStyle=cl;x.beginPath();x.moveTo(0,0);x.quadraticCurveTo(9,-12,0,-24);x.quadraticCurveTo(-9,-12,0,0);x.fill();x.restore();});
+  x.fillStyle='#ffd86b';x.beginPath();x.arc(0,-6,3.2,0,7);x.fill(); x.restore(); }
 function lotusLamp(X,Y,s){
   x.save();x.translate(X,Y);x.scale(s,s);
   glow(0,-14,42,'rgba(255,200,110,.55)','rgba(255,170,60,0)');
@@ -604,7 +607,7 @@ function lotusLamp(X,Y,s){
 }
 function drawHd(t,lake){
   S.hd=S.hd.filter(h=>t-h.t<HD_D);
-  while (S.hd.filter(h=>!h.name).length < (lake?7:4)) S.hd.push(newHd(null,t-Math.random()*HD_D*.85));
+  while (S.hd.filter(h=>!h.name).length < (lake?11:6)) S.hd.push(newHd(null,t-Math.random()*HD_D*.85));
   const ps=S.hd.filter(h=>t>=h.t).map(h=>({h,...hdPos(h,t,lake)})).sort((a,b)=>lake?a.y-b.y:b.y-a.y);
   ps.forEach(p=>{ x.save();x.globalAlpha*=p.a;
     if (lake) { x.save();x.globalCompositeOperation='lighter';glow(p.x,p.y+10*p.s,26*p.s,'rgba(255,190,100,.32)','rgba(255,170,60,0)');x.fillStyle='rgba(255,210,130,.25)';x.fillRect(p.x-2*p.s,p.y+4*p.s,4*p.s,22*p.s);x.restore(); }
@@ -831,10 +834,12 @@ function frameRest(t,K,ca){
     icon(o.icon,146,y+28,26);
     txt(o.l1,180,y+24,fitFont(o.l1,410,16,SANS,'800'),'#ffe7a3','left');txt(o.l2,180,y+45,fitFont(o.l2,410,14,SERIF,'italic 500'),'#fff1d6','left');x.restore();});
   // hoa rơi theo tim
-  const want=10+Math.min(40,S.likeBoost);S.likeBoost*=.995;
-  while(S.petals.length<want)S.petals.push({x:Math.random()*W,y:-20-Math.random()*400,v:.6+Math.random()*1.1,r:Math.random()*6,w:(Math.random()-.5)*.04,c:Math.random()<.6?'rgba(255,214,80,.85)':'rgba(255,190,205,.85)'});
-  S.petals.forEach(p=>{p.y+=p.v*1.6;p.x+=Math.sin(p.y/60+p.r)*.6;p.r+=p.w;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.beginPath();x.ellipse(0,0,7,3.5,0,0,7);x.fill();x.restore();});
-  S.petals=S.petals.filter(p=>p.y<H+20).slice(0,80);
+  const want=14+Math.min(110,S.likeBoost);S.likeBoost*=.998;
+  while(S.petals.length<want)S.petals.push({x:Math.random()*W,y:-20-Math.random()*400,v:.6+Math.random()*1.1,r:Math.random()*6,w:(Math.random()-.5)*.04,c:Math.random()<.6?'rgba(255,214,80,.85)':'rgba(255,190,205,.85)',sen:Math.random()<.18});
+  S.petals.forEach(p=>{p.y+=p.v*1.6;p.x+=Math.sin(p.y/60+p.r)*.6;p.r+=p.w;
+    if(p.sen){x.save();x.translate(p.x,p.y);x.rotate(Math.sin(p.r)*.5);senHoa(p.s||.7);x.restore();return;}
+    x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.beginPath();x.ellipse(0,0,7,3.5,0,0,7);x.fill();x.restore();});
+  S.petals=S.petals.filter(p=>p.y<H+30).slice(0,170);
   // thỉnh chuông bát nhã
   if(S.bellFx){const age=t-S.bellFx.t; if(age>5600) S.bellFx=null; else {
     const a=Math.min(1,age/300,(5600-age)/600);x.save();x.globalAlpha=a*.28*Math.max(.3,1-age/1500);x.fillStyle='rgba(255,200,90,1)';x.fillRect(0,0,W,H);x.restore();
@@ -971,7 +976,9 @@ function handle(m){
       break;
     case 'like': {
       // mọi lượt thả tim đều có phản hồi: tim bay từ chỗ người thả (chưa có chỗ thì từ góc số liệu), số tim nảy
-      S.likes=m.total||S.likes; S.likeBoost += Math.min(m.count,10); S.likeHit=t; if (m.goal) S.goal=m.goal;
+      S.likes=m.total||S.likes; S.likeBoost += Math.min(m.count,15)*1.6; S.likeHit=t; if (m.goal) S.goal=m.goal;
+      for(let k=0;k<Math.min(6,1+Math.floor(m.count/3));k++) S.petals.push({x:60+Math.random()*(W-120),y:-30-Math.random()*120,v:.8+Math.random()*.8,r:Math.random()*6,w:(Math.random()-.5)*.03,sen:true,s:.75+Math.random()*.45});
+      if (S.scene.cur!=='hall' && t-(S.likeHd.get(m.id)||-1e9)>4000) { S.likeHd.set(m.id,t); addHd(S.seats.find(u=>u&&u.id===m.id)||{id:m.id},t); if (m.count>=10) addHd(null,t-2000); }
       const p=S.anchor.get(m.id)||{x:PL.x+30,y:(S.statY||560)+30};
       for(let k=0;k<Math.min(5,1+Math.floor(m.count/3));k++) S.hearts.push({t:t+k*120,x:p.x+(Math.random()-.5)*16,y:p.y,s:13+Math.random()*7,ph:Math.random()*6});
       if(S.hearts.length>60) S.hearts.splice(0,S.hearts.length-60);
