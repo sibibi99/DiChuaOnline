@@ -16,7 +16,7 @@ const { Room } = require(GAME === 'bia-hoi' ? './lib/bia-hoi/room' : GAME === 'l
 // Bia Hơi đọc giọng riêng (mặc định Adam bựa miền Bắc của Voice Lab); đổi bằng config.biaHoi.voice, Chùa giữ giọng cũ
 if (GAME === 'bia-hoi' && cfg.voice.voicelab) cfg.voice.voicelab = { ...cfg.voice.voicelab, voice: cfg.biaHoi?.voice || 'vi-adam-bua' };
 // Lớp Học Vui: giọng cô giáo riêng (mặc định Mai Anh, nữ miền Bắc của Voice Lab); đổi bằng config.lopHoc.voice
-if (GAME === 'lop-hoc' && cfg.voice.voicelab) cfg.voice.voicelab = { ...cfg.voice.voicelab, voice: cfg.lopHoc?.voice || 'vi-mai-anh' };
+if (GAME === 'lop-hoc' && cfg.voice.voicelab) cfg.voice.voicelab = { ...cfg.voice.voicelab, voice: cfg.lopHoc?.voice || 'vi-mai-anh', fallbackVbee: false };      // CHỈ MỘT giọng cô giáo: Voice Lab tắt thì im, không đọc dự phòng bằng giọng nam Vbee
 console.log('Cấu hình:', cfgFile, '| game:', GAME);
 
 const engine = new VoiceEngine(cfg.voice);
