@@ -91,7 +91,7 @@ const ABC = ['#ef5350','#42a5f5','#66bb6a','#ffa726'];
 // ---------------- trạng thái ----------------
 const S = { scene: { id: 'sang', name: '' }, trans: null, banner: null, fxp: {}, seats: new Array(NSEAT).fill(null), pos: new Map(), top: [], book: [], lt: null, likes: 0, goal: { n: 0, target: 100 },
   seg: { key: 'diemdanh', name: '', sub: '', end: Date.now(), next: '', idx: 0, total: 6 }, q: null, qend: null, recess: { n: 0, target: 40, done: false }, jumpUntil: 0,
-  hoa: 0, tri: false, sess: [], story: null, tk: null, dd: [], wait: { size: 0, list: [] }, teams: { tp: [0,0,0,0], tps: [0,0,0,0] }, hbQ: [], hb: null, fwQ: [], spark: [],
+  hoa: 0, tri: false, sess: [], story: null, tk: null, dd: [], wait: { size: 0, list: [] }, teams: { tp: [0,0,0,0], tps: [0,0,0,0] }, hbQ: [], hb: null, donors: [], fwQ: [], spark: [],
   bubbles: new Map(), cheer: new Map(), nudge: new Map(), floats: [], hearts: [], stars: [], conf: [], toast: null, big: null, bigQ: [], say: null, tAct: null, ticker: '',
   ans: new Map(), last: now() };
 const at = id => { const p = S.pos.get(id); return p ? { x: p.x, y: p.y } : { x: CX, y: 1000 }; };
@@ -413,6 +413,8 @@ function boardQ(t, X0, XR){
     if (two) q.opts.forEach((o, i) => optBox(i, o, X0 + i * 276, y0 + 8, 260, 78, done, e, 30));
     else q.opts.forEach((o, i) => optBox(i, o, X0 + (i % 2) * 276, y0 + Math.floor(i / 2) * st, 260, rh, done, e, rh >= 42 ? 21 : 19));
   }
+  if (stage() === 'rachoi' && S.recess) { const r = S.recess, f = clamp(r.n / Math.max(1, r.target), 0, 1), hy = B.y + B.h - 17;   // vẫn thấy thanh tim của ra chơi khi đang đố nhanh
+    heart(X0 + 6, hy + 3, 1.2); x.fillStyle = 'rgba(255,255,255,.16)'; rr(X0 + 18,hy,XR - X0 - 18,6,3); x.fill(); x.fillStyle = lg(X0,0,XR,0,[[0,'#ff7aa8'],[1,'#ffd23f']]); rr(X0 + 18,hy,Math.max(6,(XR - X0 - 18) * f),6,3); x.fill(); }
   // thanh thời gian
   const by = B.y + B.h - 30;
   if (!done) { x.fillStyle='rgba(255,255,255,.18)'; rr(X0,by,XR-X0,10,5); x.fill(); x.fillStyle = f > .5 ? '#7be07b' : f > .25 ? '#ffd23f' : '#ff6b5e'; rr(X0,by,(XR-X0)*f,10,5); x.fill();
@@ -584,7 +586,15 @@ function waitPanel(X0, Y){
   const Wt = S.wait; if (!Wt.size) { txt('Gõ “lên bảng” để vào hàng chờ — cô gọi lên trả lời, miễn phí!', X0 + 410, Y + 30, `700 15px ${SANS}`, '#8a6a3a'); return; }
   Wt.list.slice(0, 6).forEach((w, i) => { const px = X0 + 128 + i * 93; txt(String(i + 1), px, Y + 31, `800 15px ${SANS}`, i ? '#8a6a3a' : '#e0a800'); head(px + 22, Y + 25, 15, w, w.paid ? '#ffd23f' : '#fff'); txt(short(w.name, 5), px + 42, Y + 30, `700 11px ${SANS}`, INK, 'left'); });
 }
+function donorPanel(X0, Y){   // BẢNG VÀNG: tên người tặng nằm lâu trên dải (nhỏ 25 giây … Sổ vàng 3 phút), không nêu số xu
+  const L = S.donors.slice(0, 4), TN = { nho: 'Sao Điểm 10', vua: 'Giấy khen', lon: 'Bàn đầu', ratlon: 'Sổ vàng' };
+  x.save(); x.fillStyle = lg(0,Y,0,Y+50,[[0,'#fff3c0'],[1,'#ffe08a']]); rr(X0,Y,692,50,14); x.fill(); x.strokeStyle = '#e0a800'; x.lineWidth = 2.5; rr(X0,Y,692,50,14); x.stroke(); x.restore();
+  x.fillStyle = '#c98a00'; rr(X0,Y,110,50,14); x.fill(); crown(X0+18,Y+16,1.1); txt('BẢNG VÀNG',X0+58,Y+36,fit('BẢNG VÀNG',96,12,SANS,'800'),'#fff');
+  L.forEach((d, i) => { const px = X0 + 124 + i * 140; head(px + 16, Y + 25, 16, d, '#fff'); txt(short(d.name, 8), px + 38, Y + 23, `800 13px ${SANS}`, INK, 'left'); txt(TN[d.tier] || 'Quà tặng', px + 38, Y + 39, `700 11px ${SANS}`, '#b8680c', 'left'); });
+}
 function ranks(t){
+  S.donors = S.donors.filter(d => d.until > Date.now());
+  if (S.donors.length && Math.floor(t / 6500) % 3 !== 2) { donorPanel(14, 796); return; }
   const ph = Math.floor(t / 6500) % 5, Y = 796, X0 = 14;
   x.save(); x.fillStyle = 'rgba(255,255,255,.88)'; rr(X0,Y,692,50,14); x.fill(); x.strokeStyle='#e5b97a'; x.lineWidth=2; rr(X0,Y,692,50,14); x.stroke(); x.restore();
   const lab = ['THI ĐUA TUẦN','LỚP TRƯỞNG','SAO HÔM NAY','CÁC TỔ',`LÊN BẢNG${S.wait.size ? ' (' + S.wait.size + ')' : ''}`][ph];
@@ -635,7 +645,7 @@ function big(t){
   if (!S.big) { const n = S.bigQ.shift(); if (!n) return; S.big = { ...n, t0: t }; if (n.k === 'vinh') { conf(70, CX, 700, 520); caps(CX, 900); } else if (n.k === 'cert' || n.k === 'lt') conf(40, CX, 700, 420); else if (n.k === 'goal') caps(CX, 1000); else if (n.k === 'fw') fireworks(7, t); else if (n.k === 'hoi') { conf(80, CX, 700, 520); caps(CX, 900); fireworks(10, t); } }
   const b = S.big, age = t - b.t0, dur = b.dur || 4500; if (age > dur) { S.big = null; return; }
   const a = Math.min(1, age / 250, (dur - age) / 350), sc = .8 + .2 * ease(Math.min(1, age / 350)), T = TIERS[b.k] || TIERS.cert, cy = 600;
-  x.save(); x.globalAlpha = a; x.fillStyle = 'rgba(30,15,0,.45)'; x.fillRect(0,0,W,H); x.translate(CX, cy); x.scale(sc, sc);
+  x.save(); x.globalAlpha = a; x.fillStyle = 'rgba(30,15,0,.45)'; x.fillRect(0,0,W,H); x.translate(CX, cy); const zm = (b.k === 'cert' || b.k === 'lt' || b.k === 'vinh') ? 1.2 : 1; x.scale(sc * zm, sc * zm);      // giấy khen / lớp trưởng / lễ tuyên dương to hơn
   if (b.k === 'goal' || b.k === 'jump' || b.k === 'fw' || b.k === 'hoi') { txt(T.head,0,-10,`96px ${SIGN}`,'#fff7d6','center',[T.cl,12],{sh:['rgba(0,0,0,.4)',16]}); if (b.sub) txt(b.sub,0,40,`800 24px ${SANS}`,'#fff','center',['rgba(0,0,0,.6)',5]); }
   else {
     if (b.k === 'len') { x.save(); x.fillStyle=lg(0,-360,0,170,[[0,'rgba(255,245,170,.6)'],[1,'rgba(255,245,170,0)']]); x.beginPath(); x.moveTo(-70,-360); x.lineTo(70,-360); x.lineTo(330,170); x.lineTo(-330,170); x.closePath(); x.fill(); x.restore(); }
@@ -787,12 +797,13 @@ function handle(m){
     case 'goaldone': if (m.goal) S.goal = m.goal; S.bigQ.push({ k: 'goal', sub: `Cả lớp đã thả đủ ${fmt(m.target)} tim`, dur: 4200 }); act('khen', 4000); break;
     case 'share': case 'follow': float(m.id, m.t === 'share' ? 'Rủ bạn vào lớp!' : 'Theo dõi lớp học!', '#7fd6ff', 15); if (m.t === 'follow') S.cheer.set(m.id, t + 1500); break;
     case 'gift': {
+      S.donors = S.donors.filter(d => d.id !== m.id); S.donors.unshift({ id: m.id, name: m.name, avatar: m.avatar, tier: m.tier, until: Date.now() + ({ nho: 25, vua: 50, lon: 90, ratlon: 180 }[m.tier] || 25) * 1000 }); if (S.donors.length > 8) S.donors.pop();
       S.hoa = m.hoa ?? S.hoa; const p = at(m.id); act('camon', 3600); S.cheer.set(m.id, t + 3000);
       if (m.flower) { for (let k = 0; k < 6; k++) S.hearts.push({ t: t + k * 90, x: p.x + (Math.random() - .5) * 30, y: p.y, s: 15, ph: k }); float(m.id, 'Tặng hoa cô giáo!', '#ff9ac0', 16, -20); }
       if (m.tier === 'nho') { S.stars.push({ t, x: p.x, y: p.y }); float(m.id, 'Điểm 10!', '#ffe27a', 18, -40); ting(); }
-      else if (m.tier === 'vua') { S.bigQ.push({ k: 'cert', name: m.name, avatar: m.avatar, id: m.id, gift: m.gift, dur: 4800 }); }
-      else if (m.tier === 'lon') { S.bigQ.push({ k: 'lt', name: m.name, avatar: m.avatar, id: m.id, gift: m.gift, dur: 5600 }); }
-      else { S.bigQ.push({ k: 'vinh', name: m.name, avatar: m.avatar, id: m.id, gift: m.gift, dur: 9000 }); act('chao', 4000); }
+      else if (m.tier === 'vua') { S.bigQ.push({ k: 'cert', name: m.name, avatar: m.avatar, id: m.id, gift: m.gift, dur: 6500 }); }
+      else if (m.tier === 'lon') { S.bigQ.push({ k: 'lt', name: m.name, avatar: m.avatar, id: m.id, gift: m.gift, dur: 7500 }); }
+      else { S.bigQ.push({ k: 'vinh', name: m.name, avatar: m.avatar, id: m.id, gift: m.gift, dur: 10000 }); act('chao', 4000); }
       break; }
     case 'speak': speak(m); break;
   }

@@ -101,3 +101,9 @@ Mọi tính năng mới đều có đường chơi MIỄN PHÍ; quà chỉ thêm
 - Câu dẫn chính tả có 10 kiểu khác nhau (thay cho một câu duy nhất).
 - Kiểm kho: `node tools/test-cau-hoi.js` (cấu trúc, 4 đáp án khác nhau, không trùng đề, không chữ nhạy cảm, số lượng tối thiểu, và thử logic chọn câu không lặp).
 
+## 12. Chỉnh nhịp buổi theo số liệu log (bản 1.5, 04/11)
+Số liệu buổi live: tổng kết ~10 bình luận/tiết, ra chơi ~38, đố vui ~390 → dồn thời gian sang nơi người xem tương tác.
+- Tiết **7 → nhịp mới**: điểm danh 45 giây; **đố vui 6 câu**; toán + chính tả 4 câu; **ra chơi 70 giây có xen 2 câu đố nhanh** (14 giây/câu, thanh tim vẫn hiện ở đáy bảng, hết giờ không đọc thêm lời); giờ kể chuyện; **kiểm tra 6 câu**; **tổng kết 20 giây**.
+- **Quà nổi bật hơn** (không xin quà, không nêu số xu, không thêm lời đọc): dải **BẢNG VÀNG** hiện tên người tặng lâu (quà nhỏ 25 giây, giấy khen 50 giây, bàn đầu 90 giây, Sổ vàng 3 phút), chen vào dải xếp hạng 2/3 thời gian khi còn người tặng; thẻ giấy khen / lớp trưởng / lễ tuyên dương **to hơn ~20% và hiện lâu hơn** (6,5 / 7,5 / 10 giây).
+- **Sao lưu mỗi ngày**: `data/lop-hoc-*.json` chép vào `data/backup-auto/<yyyymmdd>/` lúc khởi động và kiểm mỗi giờ, giữ 7 bản gần nhất.
+
