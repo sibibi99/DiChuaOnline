@@ -92,6 +92,7 @@ const server = http.createServer((req, res) => {
     if (seg[2] === 'gift') r.onGift(who, u.searchParams.get('gift') || 'Sư tử', 1, +(u.searchParams.get('coins') || 299));
     else if (seg[2] === 'like') r.onLike(who, +(u.searchParams.get('count') || 5));
     else if (seg[2] === 'share') r.onShare(who);
+    else if (seg[2] === 'game' && r.testGame) r.testGame(u.searchParams.get('kind') || '');
     else if (seg[2] === 'scene' && r.nextScene) r.nextScene(u.searchParams.get('id') || '');
     else if (seg[2] === 'seg') r.nextSeg();   // chuyển ngay sang khóa lễ / minigame kế (thử / người dẫn tự chuyển)
     else if (seg[2] === 'join') r.onJoin(who);

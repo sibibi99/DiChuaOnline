@@ -113,3 +113,12 @@ Số liệu buổi live: tổng kết ~10 bình luận/tiết, ra chơi ~38, đ�
 - **Cảm ơn quà nhỏ**: quà nào cũng cảm ơn gọi tên; quà nhỏ dồn dập trong ~6 giây thì gộp ("Cảm ơn A, B và C đã tặng quà!"), không bỏ ai, không nêu số xu. Hoa trong tuần tri ân: "A, B và C tặng hoa cô giáo, cô xin nhận nhé!".
 - Công cụ: `node tools/test-cau-hoi.js` (có kiểm kho câu đùa), `node tools/test-cam-on.js`, `node tools/do-nhip-giong.js [lib] [giây] [tốc độ]` (đếm lượt đọc mỗi 10 phút, so hai bản).
 
+## 14. Năm trò giờ ra chơi (bản 1.7, 04/11)
+Giờ ra chơi ~110 giây: thả tim → **đố nhanh 1** → **MỘT TRÒ CHƠI** → **đố nhanh 2** (giữ nguyên hai câu đố nhanh). Mỗi giờ ra chơi đổi một trò, xoay vòng ngẫu nhiên không lặp trò liền kề. Giọng cô mỗi trò chỉ **1 câu mở + 1 câu kết ≤ 12 từ**, không đọc từng ván / tỉ số. Mọi lệnh trò chơi không bị đọc thành bình luận (kể cả khi gõ ngoài giờ chơi). Quà **không** cộng lực / điểm trong trò chơi. Mọi trò miễn phí. Mã: `lib/lop-hoc/games.js`, kho từ `lib/lop-hoc/tu-doan.js`.
+1. **Oẳn tù tì với cô**: gõ `búa` / `kéo` / `bao` (không dấu `bua/keo/bao`, hoặc ✊ ✌️ ✋); mỗi ván ~10 giây, 5 ván; cô ra ngẫu nhiên, ai thắng +1 điểm; bảng hiện top thắng nhiều nhất.
+2. **Kéo co 4 tổ** (~45 giây): gõ `kéo` (1 lần / 2 giây / người) hoặc thả tim đều cộng lực cho tổ mình; bạn chưa có tổ tự xếp vào tổ ít người nhất; nút thắt trên dây nhích theo; thành viên đã kéo của tổ thắng +2 điểm.
+3. **Đoán chữ** (2 từ): từ bị che `C _ _  G _ Á _`, cô mở dần một chữ khoảng 4 giây, có gợi ý chủ đề; ai gõ đúng trước +3 (gõ có dấu hay không dấu đều được). Kho 172 từ / cụm từ.
+4. **Đếm nhanh** (4 lượt): bảng vẽ một nhóm hình (táo, sao, cá, bóng, hoa, lá) 3–20 cái, hiện 5 giây rồi che; gõ số, đúng nhanh nhất +3, những bạn đúng khác +1.
+5. **Rồng rắn lên mây** (~45 giây): gõ `rồng rắn` / `rong ran` để nối ảnh đại diện vào đuôi con rồng chạy quanh lớp; mốc 10 / 20 / 50 khúc có pháo giấy; +1 điểm tham gia.
+- Thử: `/test/<nền tảng>/game?kind=rps|tug|hang|count|dragon`; `node tools/test-tro-choi.js` (nhận lệnh có / không dấu, chống spam, điểm, giọng ≤ 2 câu cho từng trò).
+

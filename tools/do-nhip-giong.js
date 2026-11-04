@@ -13,7 +13,7 @@ const room = new Room('test', { voice: { enabled: false, engine: 'none', maxChar
 room.live = true; room.clients.add({ readyState: 1, send() {} });
 const names = Array.from({ length: 40 }, (_, i) => 'Hoc sinh ' + i), pick = a => a[Math.floor(Math.random() * a.length)];
 names.forEach(n => room.onJoin({ id: 't-' + n, name: n }));
-const CH = ['a', 'b', 'c', 'd', 'có mặt', 'lên bảng', 'học bạ', 'tổ 2', '12', '24', 'xin chào cô', 'lớp vui quá cô ơi', 'thưa cô', 'xem điểm'];
+const CH = ['a', 'b', 'c', 'd', 'có mặt', 'lên bảng', 'học bạ', 'tổ 2', '12', '24', 'xin chào cô', 'lớp vui quá cô ơi', 'thưa cô', 'xem điểm', 'búa', 'kéo', 'bao', 'rồng rắn', 'nha trang', '15'];      // gồm lệnh các trò giờ ra chơi
 const t0 = Date.now();
 const timer = setInterval(() => {
   const n = pick(names), who = { id: 't-' + n, name: n }, r = Math.random();

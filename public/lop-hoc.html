@@ -91,7 +91,7 @@ const ABC = ['#ef5350','#42a5f5','#66bb6a','#ffa726'];
 // ---------------- trạng thái ----------------
 const S = { scene: { id: 'sang', name: '' }, trans: null, banner: null, fxp: {}, seats: new Array(NSEAT).fill(null), pos: new Map(), top: [], book: [], lt: null, likes: 0, goal: { n: 0, target: 100 },
   seg: { key: 'diemdanh', name: '', sub: '', end: Date.now(), next: '', idx: 0, total: 6 }, q: null, qend: null, recess: { n: 0, target: 40, done: false }, jumpUntil: 0,
-  hoa: 0, tri: false, sess: [], story: null, tk: null, dd: [], wait: { size: 0, list: [] }, teams: { tp: [0,0,0,0], tps: [0,0,0,0] }, hbQ: [], hb: null, donors: [], fwQ: [], spark: [],
+  hoa: 0, tri: false, sess: [], story: null, tk: null, dd: [], wait: { size: 0, list: [] }, teams: { tp: [0,0,0,0], tps: [0,0,0,0] }, hbQ: [], hb: null, donors: [], game: null, rong: [], fwQ: [], spark: [],
   bubbles: new Map(), cheer: new Map(), nudge: new Map(), floats: [], hearts: [], stars: [], conf: [], toast: null, big: null, bigQ: [], say: null, tAct: null, ticker: '',
   ans: new Map(), last: now() };
 const at = id => { const p = S.pos.get(id); return p ? { x: p.x, y: p.y } : { x: CX, y: 1000 }; };
@@ -384,12 +384,12 @@ function board(t){
   const q = S.q, k = stage();
   if (q) boardQ(t, X0, XR);
   else if (k === 'diemdanh') boardDD(t, X0, XR);
-  else if (k === 'rachoi') boardRecess(t, X0, XR);
+  else if (k === 'rachoi') { if (S.game) boardGame(t, X0, XR); else boardRecess(t, X0, XR); }
   else if (k === 'ke') boardStory(t, X0, XR);
   else if (k === 'tongket' || (k === 'kt' && S.tk)) boardTK(t, X0, XR);
   else { chalk(S.seg.name.toUpperCase(),CX,B.y+170,50,'#fff','center'); chalk(S.seg.sub,CX,B.y+215,22,'#cfe9d8'); }
   // đếm ngược của tiết (không có câu hỏi)
-  if (!q) { const left = Math.max(0, S.seg.end - Date.now()), tot = Math.max(1, S.seg.tot || left); const f = clamp(left / tot, 0, 1);
+  if (!q && !(k === 'rachoi' && S.game)) { const left = Math.max(0, S.seg.end - Date.now()), tot = Math.max(1, S.seg.tot || left); const f = clamp(left / tot, 0, 1);
     x.fillStyle='rgba(255,255,255,.18)'; rr(X0,B.y+B.h-30,XR-X0,10,5); x.fill(); x.fillStyle='#ffe27a'; rr(X0,B.y+B.h-30,(XR-X0)*f,10,5); x.fill(); }
   x.restore();
 }
@@ -479,6 +479,93 @@ function teamBars(tm, win){   // 4 cột điểm tổ bên phải bảng khi t�
   const B = BOARD, base = B.y + B.h - 52, mx = Math.max(1, ...tm);
   chalk('CÁC TỔ', 584, B.y + 114, 15, '#cfe9d8', 'center', '700');
   tm.forEach((v, i) => { const px = 548 + i * 22, h = Math.max(4, 96 * v / mx); x.fillStyle = TEAMCOL[i]; rr(px - 8, base - h, 16, h, 4); x.fill(); chalk(String(i + 1), px, base + 15, 14, '#fff', 'center', '700'); if (win === i + 1) crown(px, base - h - 9, 1.2); });
+}
+
+// ---------------- TRÒ CHƠI GIỜ RA CHƠI (server điều khiển: rps / tug / hang / count / dragon) ----------------
+function rpsIcon(kind, cx, cy, s){
+  x.save(); x.translate(cx, cy); x.scale(s, s);
+  if (kind === 'bua') { x.fillStyle = '#78909c'; rr(-26,-30,52,34,6); x.fill(); x.fillStyle = '#546e7a'; rr(-26,-30,52,10,5); x.fill(); x.fillStyle = '#8d6e63'; rr(-5,4,10,38,4); x.fill(); }
+  else if (kind === 'keo') { x.strokeStyle = '#cfd8dc'; x.lineWidth = 9; x.lineCap = 'round'; x.beginPath(); x.moveTo(-6,2); x.lineTo(-24,-36); x.moveTo(6,2); x.lineTo(24,-36); x.stroke();
+    x.strokeStyle = '#ef5350'; x.lineWidth = 7; x.beginPath(); x.arc(-14,22,13,0,7); x.stroke(); x.beginPath(); x.arc(14,22,13,0,7); x.stroke(); x.lineCap = 'butt'; }
+  else if (kind === 'bao') { x.fillStyle = '#fff'; x.strokeStyle = '#90a4ae'; x.lineWidth = 3; x.beginPath(); x.moveTo(-26,-34); x.lineTo(14,-34); x.lineTo(28,-20); x.lineTo(28,36); x.lineTo(-26,36); x.closePath(); x.fill(); x.stroke();
+    x.strokeStyle = '#b0bec5'; x.lineWidth = 2; for (let i=0;i<4;i++) { x.beginPath(); x.moveTo(-16,-12+i*13); x.lineTo(18,-12+i*13); x.stroke(); } }
+  else { txt('?',0,22,`800 72px ${CHALK}`,'#ffe27a'); }
+  x.restore();
+}
+const RPSN = { bua: 'BÚA', keo: 'KÉO', bao: 'BAO' };
+function gRps(t, X0, XR, g){
+  const B = BOARD; chalk('OẲN TÙ TÌ VỚI CÔ',CX,B.y+96,30,'#fff','center');
+  chalk(`Ván ${g.round || 1}/${g.of || 5}`,XR,B.y+82,19,'#9fe3b6','right','700');
+  const res = g.phase === 'res', ix = X0 + 110, iy = B.y + 172;
+  x.strokeStyle = 'rgba(244,251,244,.7)'; x.lineWidth = 3; rr(ix-70,iy-50,140,128,12); x.stroke();
+  chalk('CÔ RA',ix,iy-58,18,'#ffe27a','center','700'); rpsIcon(res ? g.co : '?', ix, iy+4, 1.2); if (res) chalk(RPSN[g.co] || '',ix,iy+70,22,'#fff','center','700');
+  chalk('THẮNG NHIỀU NHẤT',X0+340,B.y+130,18,'#ffe27a','left','700');
+  const T = g.top || []; if (!T.length) chalk('Chưa có ai thắng cô...',X0+340,B.y+170,22,'#cfe9d8','left');
+  T.forEach((w,i) => { const py = B.y + 150 + i * 36; head(X0+356,py+6,12,w,'#ffe27a'); chalk(`${short(w.name,10)}`,X0+378,py+12,20,'#fff','left'); chalk(`${w.n} ván`,XR,py+12,20,'#ffe27a','right','700'); });
+  const by = B.y + 262; if (!res) { const f = clamp(Math.max(0,g.endAt - Date.now()) / 7500, 0, 1); x.fillStyle='rgba(255,255,255,.18)'; rr(X0,by,XR-X0,10,5); x.fill(); x.fillStyle = '#7be07b'; rr(X0,by,(XR-X0)*f,10,5); x.fill(); chalk('Gõ BÚA · KÉO · BAO!',CX,by-8,22,'#ffe27a','center','700'); }
+  else chalk(g.win ? `${g.win} bạn thắng cô ván này!` : 'Chưa ai thắng cô ván này!',CX,by+6,22,g.win ? '#9fe3b6' : '#ffb199','center','700');
+}
+function gTug(t, X0, XR, g){
+  const B = BOARD, f = g.f || [0,0,0,0], tot = f.reduce((a,b) => a + b, 0), sh = f.map(v => tot > 0 ? v / tot : .25), end = g.phase === 'end';
+  const C = { x: CX, y: B.y + 160 }, corners = [[X0+50,B.y+98],[XR-50,B.y+98],[X0+50,B.y+232],[XR-50,B.y+232]];
+  let kx = C.x, ky = C.y; corners.forEach(([cx,cy],i) => { kx += (sh[i]-.25) * (cx-C.x) * 1.5; ky += (sh[i]-.25) * (cy-C.y) * 1.5; });
+  g._kx = (g._kx == null ? kx : g._kx + (kx - g._kx) * .12); g._ky = (g._ky == null ? ky : g._ky + (ky - g._ky) * .12);
+  chalk('KÉO CO 4 TỔ',CX,B.y+84,26,'#fff','center');
+  x.lineCap = 'round'; corners.forEach(([cx,cy],i) => { x.strokeStyle = TEAMCOL[i]; x.lineWidth = 6; x.beginPath(); x.moveTo(cx,cy); x.lineTo(g._kx,g._ky); x.stroke(); }); x.lineCap = 'butt';
+  x.fillStyle = '#ffd23f'; x.beginPath(); x.arc(g._kx,g._ky,13,0,7); x.fill(); x.strokeStyle = '#b8860b'; x.lineWidth = 3; x.stroke();
+  corners.forEach(([cx,cy],i) => { x.fillStyle = TEAMCOL[i]; x.beginPath(); x.arc(cx,cy,26,0,7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 3; x.stroke();
+    chalk(String(i+1),cx,cy+9,28,'#fff','center','800'); chalk(`${Math.round(sh[i]*100)}%`,cx+(i%2===0?38:-38),cy+7,20,'#fff',i%2===0?'left':'right','700'); if (end && g.win === i+1) crown(cx,cy-36,2); });
+  const by = B.y + 262; if (!end) { const f2 = clamp(Math.max(0,g.endAt - Date.now()) / 45000, 0, 1); x.fillStyle='rgba(255,255,255,.18)'; rr(X0,by,XR-X0,10,5); x.fill(); x.fillStyle = '#ffa726'; rr(X0,by,(XR-X0)*f2,10,5); x.fill(); chalk('Gõ “kéo” hoặc thả tim cho tổ mình!',CX,by-8,20,'#ffe27a','center','700'); }
+  else chalk(g.win ? `TỔ ${g.win} THẮNG!` : 'HÒA NHAU!',CX,by+4,28,g.win ? TEAMCOL[g.win-1] : '#ffe27a','center','800');
+}
+function gHang(t, X0, XR, g){
+  const B = BOARD, pat = g.pat || [], res = g.phase === 'res'; chalk('ĐOÁN CHỮ',CX,B.y+96,30,'#fff','center');
+  chalk(`Gợi ý: ${g.hint || ''}`,CX,B.y+130,22,'#9fe3b6','center','700');
+  const slot = pat.length > 12 ? 34 : 40, gap = 16, total = pat.reduce((a,c) => a + (c === ' ' ? gap : slot), 0); let px = CX - total / 2;
+  pat.forEach(c => { if (c === ' ') { px += gap; return; } if (c === '_') { x.strokeStyle = '#f4fbf4'; x.lineWidth = 3; x.beginPath(); x.moveTo(px+4,B.y+205); x.lineTo(px+slot-4,B.y+205); x.stroke(); } else chalk(c,px+slot/2,B.y+198,44,res ? '#ffe27a' : '#fff','center','700'); px += slot; });
+  const by = B.y + 262;
+  if (!res) { const f = clamp(Math.max(0,g.endAt - Date.now()) / 26000, 0, 1); x.fillStyle='rgba(255,255,255,.18)'; rr(X0,by,XR-X0,10,5); x.fill(); x.fillStyle = '#7be07b'; rr(X0,by,(XR-X0)*f,10,5); x.fill(); chalk('Gõ chữ bạn đoán vào bình luận!',CX,by-8,20,'#cfe9d8','center'); }
+  else if (g.win) { head(CX-120,by-2,13,g.win,'#ffe27a'); chalk(`${short(g.win.name,12)} đoán đúng! +3`,CX-100,by+6,22,'#ffe27a','left','700'); }
+  else chalk('Chưa ai đoán ra — lần sau nhé!',CX,by+6,22,'#ffb199','center','700');
+}
+function shapeIcon(kind, cx, cy, r){
+  if (kind === 'sao') star(cx,cy,r*1.05,0,'#ffd23f','#c98a00');
+  else if (kind === 'hoa') flower(cx,cy,r*.62,'#ff7aa8');
+  else if (kind === 'tao') { x.fillStyle = '#e53935'; x.beginPath(); x.arc(cx,cy+2,r*.8,0,7); x.fill(); x.fillStyle = '#43a047'; x.beginPath(); x.ellipse(cx+5,cy-r*.8,6,3,-.6,0,7); x.fill(); x.strokeStyle = '#6d4c41'; x.lineWidth = 2; x.beginPath(); x.moveTo(cx,cy-r*.7); x.lineTo(cx,cy-r*1.0); x.stroke(); }
+  else if (kind === 'ca') { x.fillStyle = '#29b6f6'; x.beginPath(); x.ellipse(cx,cy,r*.9,r*.55,0,0,7); x.fill(); x.beginPath(); x.moveTo(cx+r*.8,cy); x.lineTo(cx+r*1.3,cy-r*.5); x.lineTo(cx+r*1.3,cy+r*.5); x.closePath(); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(cx-r*.45,cy-r*.1,3,0,7); x.fill(); x.fillStyle = '#01579b'; x.beginPath(); x.arc(cx-r*.45,cy-r*.1,1.4,0,7); x.fill(); }
+  else if (kind === 'bong') { x.fillStyle = '#ff7043'; x.beginPath(); x.arc(cx,cy,r*.85,0,7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 2; x.beginPath(); x.arc(cx,cy,r*.85,0,7); x.moveTo(cx-r*.85,cy); x.lineTo(cx+r*.85,cy); x.stroke(); }
+  else { x.fillStyle = '#66bb6a'; x.beginPath(); x.ellipse(cx,cy,r*.5,r*.95,.5,0,7); x.fill(); x.strokeStyle = '#2e7d32'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(cx-r*.4,cy+r*.8); x.lineTo(cx+r*.4,cy-r*.8); x.stroke(); }
+}
+const CNAME = { tao: 'quả táo', sao: 'ngôi sao', ca: 'con cá', bong: 'quả bóng', hoa: 'bông hoa', la: 'chiếc lá' };
+function gCount(t, X0, XR, g){
+  const B = BOARD, ph = g.phase; chalk('ĐẾM NHANH',CX,B.y+96,28,'#fff','center'); chalk(`Lượt ${g.round || 1}/${g.of || 4}`,XR,B.y+82,19,'#9fe3b6','right','700');
+  const cols = 7, rows = 3, cw = (XR - X0) / cols, ch = 48, top = B.y + 106;
+  if (ph === 'show' || ph === 'res') { const n = g.n || 0, sd = g.seed || 1, cells = [...Array(cols*rows).keys()].sort((a,b) => sr(sd+a*7) - sr(sd+b*7)).slice(0,n);
+    cells.forEach(c => { const px = X0 + (c % cols + .5) * cw + (sr(c*3+sd)-.5)*14, py = top + (Math.floor(c / cols) + .5) * ch + (sr(c*5+sd)-.5)*10; shapeIcon(g.kind2, px, py, 19); }); }
+  else { x.fillStyle = 'rgba(255,255,255,.08)'; rr(X0+20,top,XR-X0-40,ch*rows,12); x.fill(); chalk('?',CX,top+ch*rows*.72,92,'#ffe27a','center'); }
+  const by = B.y + 262;
+  if (ph === 'show') { const f = clamp(Math.max(0,g.endAt - Date.now()) / 5000, 0, 1); x.fillStyle='rgba(255,255,255,.18)'; rr(X0,by,XR-X0,10,5); x.fill(); x.fillStyle = '#ffd23f'; rr(X0,by,(XR-X0)*f,10,5); x.fill(); chalk(`Nhìn kỹ và đếm ${CNAME[g.kind2] || 'các hình'}!`,CX,by-8,20,'#cfe9d8','center'); }
+  else if (ph === 'ask') { const f = clamp(Math.max(0,g.endAt - Date.now()) / 7000, 0, 1); x.fillStyle='rgba(255,255,255,.18)'; rr(X0,by,XR-X0,10,5); x.fill(); x.fillStyle = '#7be07b'; rr(X0,by,(XR-X0)*f,10,5); x.fill(); chalk('Có bao nhiêu hình? Gõ SỐ vào bình luận!',CX,by-8,20,'#ffe27a','center','700'); }
+  else { chalk(`Đáp án: ${g.ans}`,X0+10,by+6,24,'#ffe27a','left','700'); if (g.win) { head(CX+40,by+2,12,g.win,'#ffe27a'); chalk(`${short(g.win.name,10)} nhanh nhất! +3`,CX+58,by+8,19,'#9fe3b6','left','700'); } else chalk('Chưa ai đúng',CX+40,by+6,20,'#ffb199','left'); }
+}
+function gDragon(t, X0, XR, g){
+  const B = BOARD, n = (S.rong || []).length; chalk('RỒNG RẮN LÊN MÂY',CX,B.y+110,38,'#fff','center');
+  chalk(`Rồng dài ${n} khúc`,CX,B.y+168,34,'#ffe27a','center','700');
+  [10,20,50].forEach((m,i) => { const px = CX - 130 + i * 130, ok = n >= m; x.fillStyle = ok ? '#43a047' : 'rgba(255,255,255,.14)'; rr(px-44,B.y+186,88,32,16); x.fill(); chalk(`${m} khúc`,px,B.y+209,19,ok ? '#fff' : '#cfe9d8','center','700'); });
+  chalk('Gõ “rồng rắn” để nối vào đuôi rồng!',CX,B.y+256,22,'#9fe3b6','center','700');
+}
+function boardGame(t, X0, XR){
+  const g = S.game; if (!g || !g.kind) return;
+  const f = { rps: gRps, tug: gTug, hang: gHang, count: gCount, dragon: gDragon }[g.kind]; if (f) f(t, X0, XR, g);
+}
+// con rồng chạy quanh lớp: đầu rồng + các khúc là ảnh đại diện người nối vào (chỉ vui mắt)
+function dragonDraw(t){
+  if (!S.game || S.game.kind !== 'dragon') return; const L = S.rong || [], th = t / 1900, sp = .16;
+  const P = u => ({ x: CX + 300 * Math.sin(u), y: 600 + 105 * Math.sin(u * 2.1 + .5) });
+  for (let i = L.length - 1; i >= 0; i--) { const p = P(th - (i + 1) * sp); x.fillStyle = ['#43a047','#66bb6a','#2e7d32'][i % 3]; x.beginPath(); x.arc(p.x,p.y,19,0,7); x.fill(); head(p.x,p.y,14,L[i],'#fff'); }
+  const h = P(th), a = Math.atan2(P(th + .05).y - h.y, P(th + .05).x - h.x);
+  x.save(); x.translate(h.x,h.y); x.rotate(a); x.fillStyle = '#2e7d32'; x.beginPath(); x.arc(0,0,26,0,7); x.fill(); x.fillStyle = '#ffd23f'; x.beginPath(); x.moveTo(-6,-22); x.lineTo(-2,-38); x.lineTo(6,-22); x.moveTo(6,-22); x.lineTo(14,-36); x.lineTo(18,-20); x.fill();
+  x.fillStyle = '#fff'; x.beginPath(); x.arc(10,-8,6,0,7); x.arc(10,10,6,0,7); x.fill(); x.fillStyle = '#222'; x.beginPath(); x.arc(12,-8,3,0,7); x.arc(12,10,3,0,7); x.fill(); x.fillStyle = '#e53935'; x.beginPath(); x.moveTo(24,0); x.lineTo(38,-4); x.lineTo(38,4); x.closePath(); x.fill(); x.restore();
 }
 
 // ---------------- cô giáo ----------------
@@ -693,7 +780,7 @@ function hocBaCard(t){
 // ---------------- khung hình ----------------
 function frame(){
   const t = now(); x.setTransform(SC,0,0,SC,0,0);
-  drawBG(t); sceneFx(t); title(t); board(t); teacherDesk(t); teacher(t); speech(t); hint(t); ranks(t); classroom(t); joinToast(t); fx(t); sceneBanner(t); big(t); hocBaCard(t); bottomBar(t);
+  drawBG(t); sceneFx(t); dragonDraw(t); title(t); board(t); teacherDesk(t); teacher(t); speech(t); hint(t); ranks(t); classroom(t); joinToast(t); fx(t); sceneBanner(t); big(t); hocBaCard(t); bottomBar(t);
   requestAnimationFrame(frame);
 }
 
@@ -760,7 +847,7 @@ function handle(m){
   switch (m.t) {
     case 'ver': checkVer(m.ver); break;
     case 'snapshot': checkVer(m.ver); setSeats(m.seats); Object.assign(S, { top: m.top || [], book: m.book || [], lt: m.lt || null, likes: m.likes || 0, goal: m.goal || S.goal, hoa: m.hoa || 0, tri: !!m.tri, sess: m.sess || [], ticker: m.ticker || '', recess: m.recess || S.recess, wait: m.wait || S.wait, teams: m.teams || S.teams });
-      if (m.scene) setScene(m.scene.id, m.scene.name, false);
+      if (m.scene) setScene(m.scene.id, m.scene.name, false); if (m.gs) handle(m.gs);
       if (m.seg) setSeg(m.seg); setQ(m.q); break;
     case 'seats': setSeats(m.seats); break;
     case 'top': S.top = m.top || []; S.book = m.book || S.book; S.lt = m.lt || null; break;
@@ -778,6 +865,13 @@ function handle(m){
     case 'recess': { const was = S.recess.done; S.recess = m; if (m.done && !was) { S.jumpUntil = t + 12000; S.bigQ.push({ k: 'jump', dur: 3200 }); caps(CX, 1000); ting(); act('khen', 4000); } break; }
     case 'tk': S.tk = m; S.sess = m.rows || S.sess; conf(50, CX, 800, 500); ting(); break;
     case 'scene': setScene(m.id, m.name, true); break;
+    case 'game': if (m.on) { S.game = { kind: m.kind, endAt: 0 }; if (m.kind === 'dragon') S.rong = []; } else { S.game = null; S.rong = []; } break;
+    case 'rps': case 'tug': case 'hang': case 'count': { const { t: _mt, kind: ck, ...rest } = m; const g0 = S.game && S.game.kind === m.t ? S.game : {};
+      S.game = { ...g0, ...rest, kind: m.t, endAt: Date.now() + (m.left || 0) }; if (m.t === 'count') S.game.kind2 = ck;
+      if (m.phase === 'res') { if (m.t === 'rps' && m.win) pop(); if ((m.t === 'hang' || m.t === 'count') && m.win) { ting(); S.cheer.set(m.win.id, t + 2000); } }
+      if (m.t === 'tug' && m.phase === 'end') { conf(40, CX, 700, 480); ting(); } break; }
+    case 'rong': { if (m.list) S.rong = m.list.slice(); else if (m.add) { S.rong.push(m.add); if (S.rong.length > 80) S.rong.shift(); S.cheer.set(m.add.id, t + 800); }
+      if (!S.game || S.game.kind !== 'dragon') S.game = { kind: 'dragon', endAt: 0 }; if (m.ms) { conf(40, CX, 620, 500); ting(); if (m.add) float(m.add.id, `${m.ms} khúc!`, '#ffe27a', 20); } break; }
     case 'kt': S.tk = { rows: m.rows || [], exam: true }; S.q = null; S.qend = null; if ((m.rows || []).length) { conf(40, CX, 800, 480); ting(); act('khen', 3000); } break;
     case 'spot': S.bigQ.push({ k: 'len', name: m.name, avatar: m.avatar, id: m.id, dur: 3000 }); S.cheer.set(m.id, t + 3000); act('point', 2400); break;
     case 'lb': float(m.id, m.full ? 'Hàng chờ đã đầy, thử lại sau nhé' : `Hàng chờ lên bảng: số ${m.pos}${m.paid ? ' (ưu tiên)' : ''}`, '#9fe3b6', 15); S.cheer.set(m.id, t + 900); break;
