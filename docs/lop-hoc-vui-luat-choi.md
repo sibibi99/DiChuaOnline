@@ -10,6 +10,7 @@
 | 2 | **Toán nhẩm + Chính tả** (4 câu) | Gõ đáp án, 3 người đúng đầu tiên được "Điểm 10" |
 | 1 | **Ra chơi** | Thả tim → cả lớp nhảy dây, đá cầu; đủ mốc tim thì cả lớp tung mũ |
 | 1,5 | **Giờ kể chuyện** | Cô kể chuyện ngắn, cuối bài có 1 câu hỏi nhanh |
+| 2 | **Kiểm tra 15 phút** (bản 1.3) | 5 câu liên tiếp, 15 giây mỗi câu, xếp hạng riêng, top 3 nhận “phiếu điểm cao” |
 | 0,5 | **Tổng kết** | Cô đọc tên top 3 buổi, tặng "Phiếu bé ngoan" |
 
 ## 2. Cách có chỗ ngồi
@@ -27,7 +28,7 @@
 | Thả tim (mỗi mốc) | +1 |
 | Tặng quà | xem mục 4 |
 
-Danh hiệu theo điểm trọn đời: **Học sinh mới → Chăm ngoan → Học sinh giỏi → Học sinh xuất sắc → Thủ khoa**. Từ "Học sinh giỏi" trở lên cô chào riêng khi vào lớp và bàn có viền sáng.
+Danh hiệu theo điểm trọn đời (ngưỡng hạ ở bản 1.1 sau buổi live đầu): **Học sinh mới (0) → Chăm ngoan (5) → Học sinh giỏi (20) → Học sinh xuất sắc (60) → Thủ khoa (150) → Gương sáng (400)**. Từ "Học sinh giỏi" trở lên cô chào riêng khi vào lớp và bàn có viền sáng.
 
 ## 4. Quà — chỉ đổi lấy HIỂN THỊ, không hứa may mắn hay lợi ích
 | Cỡ quà | Điều xảy ra |
@@ -67,3 +68,22 @@ Lời cô khi nhận quà chỉ có: **cảm ơn + chúc** (ví dụ "Cảm ơn 
 - Bàn đầu: Lớp trưởng (quà nhiều nhất tuần) ở giữa, người tặng quà lớn ngồi 40 phút, rồi tới người điểm học cao nhất tuần.
 - Tuần tri ân tự bật 12–20/11 (hoặc `lopHoc.triAn: true`): quà dạng hoa = tặng hoa cô giáo.
 - Cấu hình tuỳ chọn `lopHoc`: `speed` (chạy nhanh để thử), `likeGoal`, `triAn`, `voice`, `ticker`.
+
+
+## 9. Bản nâng cấp 1.1 / 1.2 / 1.3 (04/11, sau buổi live đầu: 200 người, 4.164 tim, trung vị 2 điểm)
+Mọi tính năng mới đều có đường chơi MIỄN PHÍ; quà chỉ thêm ưu tiên hiển thị trong game, không hứa lợi ích thật. Cô nói ngắn, tính năng mới ưu tiên hiệu ứng hình + chữ trên màn hình.
+
+### 1.1 — cân bằng
+- **Độ khó tự điều chỉnh** (đố vui / chính tả / toán tách riêng): câu vừa xong >60% đúng → câu sau khó hơn, <10% đúng → dễ hơn. Mỗi câu có nhãn khó 1–3, tỉ lệ đúng lưu lại (từ 10 lượt trở lên, >80% coi như dễ hơn một bậc, <10% khó hơn một bậc). Toán nhẩm sinh theo 3 mức, bắt đầu ở mức dễ. Chính tả có thêm ~40 cặp khó (chỉ từ chắc chắn đúng).
+- **Mốc tim tự tăng**: mốc thanh tim = tốc độ thả tim 3 phút gần nhất × 1,5 phút (100–3.000); đủ mốc cả lớp tung mũ. Trong buổi live: mỗi **1.000 tim** pháo hoa + cô khen, mỗi **5.000 tim** **Ngày hội** (mọi bạn có mặt trong 10 phút gần đây +5 điểm). Mục tiêu tim ra chơi cũng theo tốc độ thả tim.
+- **Nhật ký**: `data/lop-hoc-log.jsonl` (không commit): mỗi tiết một dòng (chat, trả lời, đúng, số người, tim, người xem, ghế) + mỗi câu hỏi một dòng + tóm tắt cả buổi; cuối tiết tổng kết in **báo cáo buổi** ra console.
+
+### 1.2 — giữ chân
+- **LÊN BẢNG** (miễn phí): gõ “lên bảng” / “cho em lên” / “cho con lên” vào hàng chờ (tối đa 12; ưu tiên chuỗi điểm danh dài, sau đó theo thứ tự gõ; tin hiện số thứ tự). Sau mỗi 2 câu hỏi cô gọi 1 bạn: thẻ avatar to + spotlight, bạn đó trả lời câu kế tiếp (đúng +8 điểm, sai/không kịp: cô động viên). Quà bất kỳ = ưu tiên 1 lượt trong hàng chờ (chỉ hiển thị trong game).
+- **HỌC BẠ**: gõ “học bạ” → thẻ 6 giây (avatar, tên, danh hiệu, điểm trọn đời/tuần, chuỗi điểm danh, câu đúng, huy hiệu, tổ, nhiệm vụ).
+- **NHIỆM VỤ TRONG BUỔI**: điểm danh + trả lời 1 câu + thả tim → huy hiệu “Học sinh chăm” +3 điểm.
+- **4 TỔ THI ĐUA**: gõ “tổ 1…4” (chưa chọn thì tự xếp); viền màu tổ ở bàn, bảng “CÁC TỔ” luân phiên ở dải thi đua, cột điểm tổ ở tiết tổng kết, tổ dẫn đầu buổi được cô khen.
+### 1.3 — nội dung
+- Kho đố vui ~215 câu có chủ đề (Việt Nam, văn hóa, thế giới, khoa học, động vật, toán, thể thao, tiếng Việt, đố mẹo, tiếng Anh vỡ lòng); mỗi ngày ưu tiên chủ đề riêng (T2 Việt Nam, T3 khoa học, T4 đố mẹo, T5 tiếng Anh, T6 tiếng Việt, T7 thế giới + động vật, CN toán + thể thao); không lặp câu tới khi dùng hết kho.
+- **Kiểm tra 15 phút** trước tổng kết; xếp hạng riêng; top 3 nhận “phiếu điểm cao” (+5/+3/+2 điểm).
+- **Tuần tri ân 12–20/11**: biển “Tri ân thầy cô”, bó hoa trên bục (đếm bó, 20 bông một bó), cô cúi chào + mưa cánh hoa mỗi 20 bông, **gõ “tặng hoa cô” / “hoa” miễn phí** (25 giây/lần) hoặc tặng quà dạng hoa.

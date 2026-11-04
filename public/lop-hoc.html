@@ -84,13 +84,14 @@ const BOARD = { x: 66, y: 126, w: 588, h: 300 };
 const TEACH_X = 150, TEACH_FY = 742, TEACH_H = 318;
 const ROWYH = [890, 978, 1068, 1158], ROWS_S = [.76, .85, .94, 1.03], PER = 7, NSEAT = 28;
 const seatXY = i => { const r = Math.floor(i / PER), k = i % PER; return { x: 60 + k * 100, y: ROWYH[r], s: ROWS_S[r], r }; };
-const LVCOL = ['#90a4ae','#66bb6a','#42a5f5','#ab47bc','#ffca28'], LVNAME = ['Học sinh mới','Chăm ngoan','Học sinh giỏi','Học sinh xuất sắc','Thủ khoa'];
+const LVCOL = ['#90a4ae','#66bb6a','#42a5f5','#ab47bc','#ffca28','#ff5a8a'], LVNAME = ['Học sinh mới','Chăm ngoan','Học sinh giỏi','Học sinh xuất sắc','Thủ khoa','Gương sáng'];
+const TEAMCOL = ['#ef5350','#42a5f5','#43a047','#ffa726'], HCOL = ['#42a5f5','#66bb6a','#ffa726','#ff5a8a','#8e6bd8','#26a69a'];
 const ABC = ['#ef5350','#42a5f5','#66bb6a','#ffa726'];
 
 // ---------------- trạng thái ----------------
 const S = { seats: new Array(NSEAT).fill(null), pos: new Map(), top: [], book: [], lt: null, likes: 0, goal: { n: 0, target: 100 },
   seg: { key: 'diemdanh', name: '', sub: '', end: Date.now(), next: '', idx: 0, total: 6 }, q: null, qend: null, recess: { n: 0, target: 40, done: false }, jumpUntil: 0,
-  hoa: 0, tri: false, sess: [], story: null, tk: null, dd: [],
+  hoa: 0, tri: false, sess: [], story: null, tk: null, dd: [], wait: { size: 0, list: [] }, teams: { tp: [0,0,0,0], tps: [0,0,0,0] }, hbQ: [], hb: null, fwQ: [], spark: [],
   bubbles: new Map(), cheer: new Map(), nudge: new Map(), floats: [], hearts: [], stars: [], conf: [], toast: null, big: null, bigQ: [], say: null, tAct: null, ticker: '',
   ans: new Map(), last: now() };
 const at = id => { const p = S.pos.get(id); return p ? { x: p.x, y: p.y } : { x: CX, y: 1000 }; };
@@ -101,7 +102,10 @@ function conf(n, X, Y, spread=300, up=1){ const cols=['#ef5350','#42a5f5','#66bb
   for(let i=0;i<n;i++) S.conf.push({ x: X + (Math.random()-.5)*spread, y: Y, vx: (Math.random()-.5)*5, vy: -(Math.random()*9+3)*up, r: Math.random()*6, vr: (Math.random()-.5)*.4, c: cols[i%cols.length], w: 7+Math.random()*7, a: 1 });
   if (S.conf.length > 260) S.conf.splice(0, S.conf.length - 260); }
 function caps(X, Y){ for(let i=0;i<9;i++) S.conf.push({ cap: true, x: X + (Math.random()-.5)*420, y: Y, vx: (Math.random()-.5)*4, vy: -(Math.random()*11+8), r: Math.random()*6, vr: (Math.random()-.5)*.3, w: 1+Math.random()*.5, a: 1 }); }
-function float(id, text, cl='#fff', size=16, dy=0){ const p = at(id); S.floats.push({ t: now(), x: p.x, y: p.y - 40 + dy, text, cl, size }); if (S.floats.length > 40) S.floats.shift(); }
+function fireworks(n, t0){ const cols=['#ff5a8a','#ffd23f','#42a5f5','#66bb6a','#ff9a3d','#ba68c8','#fff'];
+  for(let i=0;i<n;i++) S.fwQ.push({ t: t0 + i*330, x: 80 + Math.random()*560, y: 190 + Math.random()*380, c: cols[i%cols.length] }); }
+function petals(n){ for(let i=0;i<n;i++) S.conf.push({ petal: true, x: Math.random()*W, y: -10 - Math.random()*120, vx: (Math.random()-.5)*1.4, vy: 1 + Math.random()*1.6, r: Math.random()*6, vr: (Math.random()-.5)*.12, w: 9+Math.random()*6, a: 3.2, c: ['#ffc1d6','#ff9ac0','#ffe0ea','#ffb3cf'][i%4] }); }
+function float(id, text, cl='#fff', size=16, dy=0){ const p = at(id), tt = now(), k = S.floats.filter(f => f.id === id && tt - f.t < 1600).length; S.floats.push({ t: tt, id, x: p.x, y: p.y - 40 + dy - k * 22, text, cl, size }); if (S.floats.length > 40) S.floats.shift(); }
 function toast(text, cl=CREAM){ S.toast = { text, cl, t: now() }; }
 
 // ---------------- nền lớp học (vẽ 1 lần) ----------------
@@ -156,6 +160,9 @@ function title(t){
   txt('LỚP HỌC VUI',CX,64,`54px ${SIGN}`,'#fff7d6','center',['#7a1218',6]);
   star(150,49,9,Math.sin(t/500)*.3); star(570,49,9,-Math.sin(t/500)*.3);
   clockFace(640,54,32);
+  if (S.tri) { const T='TRI ÂN THẦY CÔ · NGÀY NHÀ GIÁO 20/11'; x.save(); x.shadowColor='rgba(0,0,0,.3)'; x.shadowBlur=6; x.fillStyle=lg(0,88,0,114,[[0,'#d6343b'],[1,'#a31c24']]); rr(150,89,420,25,12); x.fill(); x.restore();
+    x.strokeStyle=GOLD; x.lineWidth=2; rr(153,92,414,19,9); x.stroke(); flower(172,101,6,'#ffd0e0'); flower(548,101,6,'#ffd0e0');
+    txt(T,CX,106,fit(T,340,14,SANS,'800'),'#fff3c4','center',null,{sp:1}); }
   // ô tim bên trái
   x.fillStyle='rgba(255,255,255,.9)'; rr(14,30,112,40,20); x.fill(); x.strokeStyle='#e5b97a'; x.lineWidth=2; x.stroke();
   heart(36,51,1.25+.1*Math.sin(t/260)); txt(fmt(S.likes),52,59,`800 19px ${SANS}`,'#b5232b','left');
@@ -174,7 +181,7 @@ function board(t){
   else if (k === 'diemdanh') boardDD(t, X0, XR);
   else if (k === 'rachoi') boardRecess(t, X0, XR);
   else if (k === 'ke') boardStory(t, X0, XR);
-  else if (k === 'tongket') boardTK(t, X0, XR);
+  else if (k === 'tongket' || (k === 'kt' && S.tk)) boardTK(t, X0, XR);
   else { chalk(S.seg.name.toUpperCase(),CX,B.y+170,50,'#fff','center'); chalk(S.seg.sub,CX,B.y+215,22,'#cfe9d8'); }
   // đếm ngược của tiết (không có câu hỏi)
   if (!q) { const left = Math.max(0, S.seg.end - Date.now()), tot = Math.max(1, S.seg.tot || left); const f = clamp(left / tot, 0, 1);
@@ -183,24 +190,30 @@ function board(t){
 }
 function boardQ(t, X0, XR){
   const B = BOARD, q = S.q, e = S.qend, done = !!(e && e.id === q.id), left = Math.max(0, q.end - Date.now()), f = clamp(left / q.total, 0, 1);
-  chalk(`Câu ${q.k}/${q.of} · ${q.tag}`,X0,B.y+82,19,'#9fe3b6','left','700');
+  if (q.spot) {   // LÊN BẢNG: avatar to + tên trên bảng đen (gọn trong 1 dòng để không đè chữ câu hỏi)
+    const sp = q.spot, ax = X0 + 24, ay = B.y + 68, pu = .5 + .5 * Math.sin(t / 260), res = done && e.spot;
+    glow(ax, ay, 50 + 5 * pu, 'rgba(255,240,150,.6)', 'rgba(255,240,150,0)'); head(ax, ay, 24, sp, '#ffe27a');
+    chalk(`LÊN BẢNG · ${short(sp.name, 12)}`, ax + 34, B.y + 76, 19, '#ffe27a', 'left', '700');
+    if (res) chalk(res.ok ? 'ĐÚNG! +8 điểm' : res.answered ? 'chưa đúng, cố lên!' : 'chưa kịp trả lời', XR, B.y + 66, 17, res.ok ? '#9fe3b6' : '#ffb199', 'right', '700');
+  } else chalk(`Câu ${q.k}/${q.of} · ${q.tag}`,X0,B.y+82,19,'#9fe3b6','left','700');
   if (q.type === 'num') {
     chalk(q.text,CX,B.y+185,70,'#fff','center');
     if (done) { chalk(`Đáp án: ${e.ansTxt}`,CX,B.y+240,38,'#ffe27a','center','700'); }
     else chalk('Gõ đáp án là SỐ vào bình luận',CX,B.y+240,24,'#cfe9d8');
   } else {
-    const two = q.opts.length === 2, F = `${two ? 34 : 27}px ${CHALK}`, ls = wrap(q.text, XR - X0, F).slice(0, 3), lh = two ? 38 : 31;
-    ls.forEach((l, i) => chalk(l, CX, B.y + 112 + i * lh, two ? 34 : 27, '#fff', 'center'));
-    const y0 = B.y + 112 + ls.length * lh - 8;
+    const two = q.opts.length === 2; let fs_ = two ? 34 : 27, lh = two ? 38 : 31, ls = wrap(q.text, XR - X0, `${fs_}px ${CHALK}`);
+    if (!two && ls.length > 2) { fs_ = 21; lh = 25; ls = wrap(q.text, XR - X0, `${fs_}px ${CHALK}`); }      // câu dài: chữ nhỏ lại để ô đáp án không đè thanh thời gian
+    ls = ls.slice(0, 3); ls.forEach((l, i) => chalk(l, CX, B.y + 112 + i * lh, fs_, '#fff', 'center'));
+    const y0 = B.y + 112 + ls.length * lh - 8, rh = ls.length >= 3 ? 38 : 42, st = rh + 4;
     if (two) q.opts.forEach((o, i) => optBox(i, o, X0 + i * 276, y0 + 8, 260, 78, done, e, 30));
-    else q.opts.forEach((o, i) => optBox(i, o, X0 + (i % 2) * 276, y0 + Math.floor(i / 2) * 50, 260, 44, done, e, 21));
+    else q.opts.forEach((o, i) => optBox(i, o, X0 + (i % 2) * 276, y0 + Math.floor(i / 2) * st, 260, rh, done, e, rh >= 42 ? 21 : 19));
   }
   // thanh thời gian
   const by = B.y + B.h - 30;
   if (!done) { x.fillStyle='rgba(255,255,255,.18)'; rr(X0,by,XR-X0,10,5); x.fill(); x.fillStyle = f > .5 ? '#7be07b' : f > .25 ? '#ffd23f' : '#ff6b5e'; rr(X0,by,(XR-X0)*f,10,5); x.fill();
-    chalk(`${q.n || 0} bạn đã trả lời`,XR,B.y+82,19,'#cfe9d8','right'); chalk(`${Math.ceil(left/1000)} giây`,X0,by-8,18,f>.25?'#ffe27a':'#ff9a8f','left','700'); }
+    chalk(q.spot ? `Câu ${q.k}/${q.of} · ${q.n || 0} bạn đã trả lời` : `${q.n || 0} bạn đã trả lời`,XR,B.y+82,q.spot?16:19,'#cfe9d8','right'); chalk(`${Math.ceil(left/1000)} giây`,X0,by-3,17,f>.25?'#ffe27a':'#ff9a8f','left','700'); }
   else {   // người nhanh nhất hiện dưới bảng
-    chalk(`${e.right} bạn đúng / ${e.total} bạn trả lời`,XR,B.y+82,19,'#cfe9d8','right');
+    chalk(`${e.right} bạn đúng / ${e.total} bạn trả lời`,XR,B.y+82,q.spot?16:19,'#cfe9d8','right');
     e.win.slice(0, 3).forEach((w, i) => { const px = X0 + 6 + i * 180, py = by + 4; head(px + 11, py + 4, 11, w, '#ffe27a'); chalk(`${short(w.name, 7)} +${w.pts}`, px + 27, py + 10, 17, '#ffe27a', 'left', '700'); });
   }
 }
@@ -246,13 +259,19 @@ function boardStory(t, X0, XR){
   x.strokeStyle='#cfe9d8'; x.lineWidth=2.5; x.beginPath(); x.moveTo(CX-80,B.y+228); x.lineTo(CX-4,B.y+222); x.lineTo(CX-4,B.y+246); x.lineTo(CX-80,B.y+250); x.closePath(); x.moveTo(CX+80,B.y+228); x.lineTo(CX+4,B.y+222); x.lineTo(CX+4,B.y+246); x.lineTo(CX+80,B.y+250); x.closePath(); x.stroke();
 }
 function boardTK(t, X0, XR){
-  const B = BOARD; chalk('TỔNG KẾT BUỔI HỌC',CX,B.y+86,32,'#fff','center');
+  const B = BOARD, ex = !!(S.tk && S.tk.exam); chalk(ex ? 'KẾT QUẢ KIỂM TRA' : 'TỔNG KẾT BUỔI HỌC',CX,B.y+86,32,'#fff','center');
   const rows = (S.tk && S.tk.rows) || [];
-  if (!rows.length) { chalk('Hôm nay lớp còn yên ắng... hẹn các em ở tiết sau!',CX,B.y+190,24,'#ffe27a'); return; }
+  if (!ex && S.tk && S.tk.teams) teamBars(S.tk.teams, S.tk.win);
+  if (!rows.length) { chalk(ex ? 'Chưa ai làm đúng bài kiểm tra này...' : 'Hôm nay lớp còn yên ắng... hẹn các em ở tiết sau!',CX,B.y+190,24,'#ffe27a'); return; }
   const order = [1, 0, 2], hts = [66, 90, 56];
   order.forEach((ri, col) => { const w = rows[ri]; if (!w) return; const bx = CX - 170 + col * 120, h = hts[col], by = B.y + B.h - 34 - h;
     x.fillStyle = ['#cfd8dc','#ffd23f','#d7a46a'][ri]; rr(bx - 46, by, 92, h, 6); x.fill(); chalk(String(ri + 1), bx, by + 26, 28, '#7a4a1a', 'center', '800');
-    head(bx, by - 26, 22, w, '#fff'); chalk(short(w.name, 9), bx, by - 56, 18, '#fff', 'center', '700'); chalk(`${w.n} điểm`, bx, by + h - 7, 15, '#7a4a1a', 'center', '700'); });
+    head(bx, by - 26, 22, w, '#fff'); chalk(short(w.name, 9), bx, by - 56, 18, '#fff', 'center', '700'); chalk(ex ? `${w.n}/${w.of || 5} đúng` : `${w.n} điểm`, bx, by + h - 7, 15, '#7a4a1a', 'center', '700'); });
+}
+function teamBars(tm, win){   // 4 cột điểm tổ bên phải bảng khi tổng kết
+  const B = BOARD, base = B.y + B.h - 52, mx = Math.max(1, ...tm);
+  chalk('CÁC TỔ', 584, B.y + 114, 15, '#cfe9d8', 'center', '700');
+  tm.forEach((v, i) => { const px = 548 + i * 22, h = Math.max(4, 96 * v / mx); x.fillStyle = TEAMCOL[i]; rr(px - 8, base - h, 16, h, 4); x.fill(); chalk(String(i + 1), px, base + 15, 14, '#fff', 'center', '700'); if (win === i + 1) crown(px, base - h - 9, 1.2); });
 }
 
 // ---------------- cô giáo ----------------
@@ -264,6 +283,7 @@ function teacher(t){
   if (a) { const k = (t - a.t0) / 1000;
     if (a.k === 'khen') { dy -= Math.abs(Math.sin(t/150)) * 16; sx = sy = 1.03; rot = Math.sin(t/120) * .035; }
     else if (a.k === 'camon') { rot = -.05 + Math.sin(t/260) * .02; sy = .985; }
+    else if (a.k === 'cui') { const b = Math.sin(clamp(k / 3.6, 0, 1) * Math.PI); rot = b * .3; dy += b * 8; sy = 1 - b * .1; }
     else if (a.k === 'chao') { const b = Math.sin(clamp(k / 1.6, 0, 1) * Math.PI); rot = b * .16; sy = 1 - b * .07; }
     else if (a.k === 'ngac') { dy -= Math.max(0, Math.sin(k * 9)) * 6 * (1 - Math.min(1, k)); rot = -.06 * Math.sin(k * 6) * (1 - Math.min(1, k * .8)); } }
   x.save(); x.fillStyle='rgba(60,30,10,.28)'; x.beginPath(); x.ellipse(TEACH_X + 6, TEACH_FY + 2, w * .42, 9, 0, 0, 7); x.fill();
@@ -272,12 +292,12 @@ function teacher(t){
 function teacherDesk(t){
   // bục giảng bên phải: hoa tặng cô trên bàn
   x.fillStyle='#b9803f'; rr(470,698,232,12,4); x.fill(); x.fillStyle='#a06c30'; x.fillRect(480,710,212,34); x.fillStyle='#8a5a26'; x.fillRect(480,740,212,6);
-  const lab = (S.tri || S.hoa) ? `HOA TẶNG CÔ: ${S.hoa}` : 'BÀN CÔ GIÁO';
-  x.fillStyle='rgba(255,240,205,.92)'; rr(540,716,130,20,4); x.fill(); txt(lab,605,731,`800 11px ${SANS}`,(S.tri || S.hoa) ? RED : '#7a4a1a','center',null,{sp:1});
+  const lab = (S.tri || S.hoa) ? `HOA TẶNG CÔ: ${S.hoa} · BÓ ${Math.floor(S.hoa/20)+1}: ${S.hoa%20}/20` : 'BÀN CÔ GIÁO';
+  x.fillStyle='rgba(255,240,205,.92)'; rr(536,716,152,20,4); x.fill(); txt(lab,612,731,fit(lab,146,11,SANS,'800'),(S.tri || S.hoa) ? RED : '#7a4a1a','center');
   // lọ hoa: số bông = hoa tặng (tối đa 20 hiện ra)
   const vx = 520, vy = 698; x.fillStyle='#8ec9e8'; x.beginPath(); x.moveTo(vx-14,vy); x.lineTo(vx+14,vy); x.lineTo(vx+10,vy-30); x.lineTo(vx-10,vy-30); x.closePath(); x.fill(); x.strokeStyle='#5fa6cc'; x.lineWidth=2; x.stroke();
-  const n = Math.min(20, S.hoa), cols = ['#ff7aa8','#ffd23f','#ff8a65','#ef5350','#f48fb1'];
-  x.strokeStyle='#4a9a4a'; x.lineWidth=2; for (let i = 0; i < Math.max(3, n); i++) { const a = -1.1 + i * 2.2 / Math.max(2, Math.max(3, n) - 1), L = 36 + (i % 3) * 7, fx = vx + Math.sin(a) * L, fy = vy - 28 - Math.cos(a) * L; x.beginPath(); x.moveTo(vx,vy-26); x.lineTo(fx,fy); x.stroke(); if (i < Math.max(3, n)) flower(fx, fy, 8 + (i%2)*2, cols[i % cols.length]); }
+  const n = Math.min(36, S.hoa), cols = ['#ff7aa8','#ffd23f','#ff8a65','#ef5350','#f48fb1'];
+  x.strokeStyle='#4a9a4a'; x.lineWidth=2; for (let i = 0; i < Math.max(3, n); i++) { const a = -1.1 + i * 2.2 / Math.max(2, Math.max(3, n) - 1), L = 34 + (i % 4) * 6, fx = vx + Math.sin(a) * L, fy = vy - 28 - Math.cos(a) * L; x.beginPath(); x.moveTo(vx,vy-26); x.lineTo(fx,fy); x.stroke(); if (i < Math.max(3, n)) flower(fx, fy, (n > 20 ? 6 : 8) + (i%2)*2, cols[i % cols.length]); }
 }
 function speech(t){
   const s = S.say; if (!s) return;
@@ -300,7 +320,7 @@ function desk(X, Y, s, r, u){
   x.fillStyle = r === 0 ? '#f0c36a' : '#e8b877'; rr(X-w/2, top, w, 12*s, 4*s); x.fill();
   x.fillStyle = r === 0 ? '#d9a13d' : '#c98f4a'; rr(X-w/2+2*s, top+10*s, w-4*s, 20*s, 4*s); x.fill();
   if (r === 0) { x.strokeStyle = '#ffd54a'; x.lineWidth = 2; rr(X-w/2, top, w, 12*s, 4*s); x.stroke(); }
-  if (u) { x.fillStyle = '#fffbe9'; rr(X-w*.42, top+13*s, w*.84, 14*s, 3*s); x.fill(); txt(short(u.name, 9), X, top + 24.2*s, fit(short(u.name, 9), w*.78, 11*s, SANS, '800'), '#5a3a1a'); }
+  if (u) { x.fillStyle = '#fffbe9'; rr(X-w*.42, top+13*s, w*.84, 14*s, 3*s); x.fill(); if (u.tm) { x.fillStyle = TEAMCOL[u.tm-1]; rr(X-w*.42, top+24.6*s, w*.84, 2.4*s, 1.2*s); x.fill(); } txt(short(u.name, 9), X, top + 24.2*s, fit(short(u.name, 9), w*.78, 11*s, SANS, '800'), '#5a3a1a'); }
 }
 function student(X, Y, s, u, t, o){
   const r = 24 * s, h = hash(u.id), lv = u.lv || 0, cheer = (S.cheer.get(u.id) || 0) > t, bob = cheer ? -Math.abs(Math.sin(t/110)) * 9 * s : Math.sin(t/700 + h) * 1.2 * s, yy = Y + bob;
@@ -339,21 +359,35 @@ function classroom(t){
 }
 
 // ---------------- dải thông tin: gợi ý, bảng thi đua ----------------
-const HINTS = [['nguoi','Gõ một chữ bất kỳ','để vào lớp có chỗ ngồi'],['co','Gõ “có mặt”','để điểm danh, nhận sao chuỗi ngày'],['abcd','Gõ A · B · C · D','để trả lời câu hỏi của cô'],['tim','Thả tim ♥','để cả lớp ra chơi nhảy dây']];
+const HINTS = [['nguoi','Gõ một chữ bất kỳ','để vào lớp có chỗ ngồi'],['co','Gõ “có mặt”','để điểm danh, nhận sao chuỗi ngày'],['abcd','Gõ A · B · C · D','để trả lời câu hỏi của cô'],['tim','Thả tim ♥','để cả lớp ra chơi nhảy dây'],['len','Gõ “lên bảng”','để cô gọi lên trả lời · miễn phí'],['hb','Gõ “học bạ”','xem thẻ học sinh · gõ “tổ 1…4” vào tổ thi đua']];
 function hint(t){
   const k = Math.floor(t / 3400) % HINTS.length, [ic, a, b] = HINTS[k], pu = .5 + .5 * Math.sin(t / 420);
   x.save(); x.shadowColor='rgba(60,30,10,.3)'; x.shadowBlur=8; x.fillStyle='#fffdf3'; rr(14,752,692,38,19); x.fill(); x.restore();
-  x.strokeStyle = ['#42a5f5','#66bb6a','#ffa726','#ff5a8a'][k]; x.lineWidth = 2 + pu; rr(14,752,692,38,19); x.stroke();
-  x.fillStyle = ['#42a5f5','#66bb6a','#ffa726','#ff5a8a'][k]; rr(14,752,150,38,19); x.fill();
+  x.strokeStyle = HCOL[k]; x.lineWidth = 2 + pu; rr(14,752,692,38,19); x.stroke();
+  x.fillStyle = HCOL[k]; rr(14,752,150,38,19); x.fill();
   txt(a,89,777,fit(a,138,17,SANS,'800'),'#fff'); txt(b,172+260,777,fit(b,500,19,SANS,'700'),INK);
 }
+function teamPanel(X0, Y){
+  const tps = S.teams.tps, tp = S.teams.tp, mx = Math.max(...tps), win = mx > 0 && tps.filter(v => v === mx).length === 1 ? tps.indexOf(mx) : -1;
+  for (let i = 0; i < 4; i++) { const px = X0 + 122 + i * 142;
+    x.fillStyle = TEAMCOL[i]; rr(px, Y + 8, 132, 34, 10); x.fill();
+    txt(`Tổ ${i + 1}`, px + 32, Y + 30, `800 15px ${SANS}`, '#fff');
+    txt(`${fmt(tps[i])} đ`, px + 94, Y + 25, `800 15px ${SANS}`, '#fff'); txt(`tuần ${fmt(tp[i])}`, px + 94, Y + 37, `700 10px ${SANS}`, 'rgba(255,255,255,.85)');
+    if (win === i) crown(px + 12, Y + 8, 1.5); }
+}
+function waitPanel(X0, Y){
+  const Wt = S.wait; if (!Wt.size) { txt('Gõ “lên bảng” để vào hàng chờ — cô gọi lên trả lời, miễn phí!', X0 + 410, Y + 30, `700 15px ${SANS}`, '#8a6a3a'); return; }
+  Wt.list.slice(0, 6).forEach((w, i) => { const px = X0 + 128 + i * 93; txt(String(i + 1), px, Y + 31, `800 15px ${SANS}`, i ? '#8a6a3a' : '#e0a800'); head(px + 22, Y + 25, 15, w, w.paid ? '#ffd23f' : '#fff'); txt(short(w.name, 5), px + 42, Y + 30, `700 11px ${SANS}`, INK, 'left'); });
+}
 function ranks(t){
-  const ph = Math.floor(t / 7000) % 3, Y = 796, X0 = 14;
+  const ph = Math.floor(t / 6500) % 5, Y = 796, X0 = 14;
   x.save(); x.fillStyle = 'rgba(255,255,255,.88)'; rr(X0,Y,692,50,14); x.fill(); x.strokeStyle='#e5b97a'; x.lineWidth=2; rr(X0,Y,692,50,14); x.stroke(); x.restore();
-  const lab = ['THI ĐUA TUẦN','LỚP TRƯỞNG','SAO HÔM NAY'][ph];
+  const lab = ['THI ĐUA TUẦN','LỚP TRƯỞNG','SAO HÔM NAY','CÁC TỔ',`LÊN BẢNG${S.wait.size ? ' (' + S.wait.size + ')' : ''}`][ph];
   x.fillStyle = RED; rr(X0,Y,110,50,14); x.fill(); star(X0+16,Y+14,7); txt(lab,X0+55,Y+33,fit(lab,98,11,SANS,'800'),'#fff');
   if (ph === 0 || ph === 2) { const L = ph === 0 ? S.top : S.sess; if (!L.length) { txt(ph === 0 ? 'Chưa có ai ghi điểm tuần này — gõ A, B, C, D thật nhanh!' : 'Buổi học mới bắt đầu — chưa ai ghi điểm!',X0+410,Y+30,`700 15px ${SANS}`,'#8a6a3a'); return; }
     L.slice(0,5).forEach((w, i) => { const px = X0 + 130 + i * 112; txt(String(i+1),px,Y+31,`800 17px ${SANS}`,['#e0a800','#78909c','#b8794a','#8a6a3a','#8a6a3a'][i]); head(px+24,Y+25,16,w,['#ffd23f','#cfd8dc','#d7a46a','#fff','#fff'][i]); txt(short(w.name,6),px+46,Y+23,`700 11px ${SANS}`,INK,'left'); txt(`${fmt(w.n)} đ`,px+46,Y+39,`800 12px ${SANS}`,RED,'left'); }); }
+  else if (ph === 3) teamPanel(X0, Y);
+  else if (ph === 4) waitPanel(X0, Y);
   else { if (S.lt) { crown(X0+140,Y+25,1.5); head(X0+176,Y+25,17,S.lt,GOLD); txt(short(S.lt.name,9),X0+198,Y+31,`800 15px ${SANS}`,INK,'left'); } else txt('Lớp trưởng tuần: chưa có',X0+130,Y+30,`700 14px ${SANS}`,'#8a6a3a','left');
     txt('SỔ VÀNG:',X0+360,Y+30,`800 13px ${SANS}`,RED,'left'); const B = S.book.slice(0,3); if (!B.length) txt('đang chờ ghi tên',X0+430,Y+30,`700 13px ${SANS}`,'#8a6a3a','left');
     B.forEach((w,i) => { head(X0+440+i*90,Y+25,15,w,'#ffd23f'); txt(short(w.name,5),X0+458+i*90,Y+30,`700 11px ${SANS}`,INK,'left'); }); }
@@ -362,7 +396,7 @@ function bottomBar(t){
   const goal = S.goal, f = clamp(goal.n / Math.max(1, goal.target), 0, 1);
   x.fillStyle = '#4a2f18'; x.fillRect(0,1236,W,44);
   x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(0,1236,W,6); x.fillStyle = lg(0,0,W,0,[[0,'#ff7aa8'],[1,'#ffd23f']]); x.fillRect(0,1236,W*f,6);
-  const tips = [S.ticker, 'Chương trình giải trí · nội dung do AI tạo · quà tặng là ủng hộ kênh', `Mục tiêu tim: ${fmt(goal.n)} / ${fmt(goal.target)} — đủ tim cả lớp tung mũ chúc mừng`, 'Điểm danh mỗi ngày để giữ chuỗi sao · thứ Hai bảng thi đua về 0 · điểm trọn đời giữ nguyên'].filter(Boolean);
+  const tips = [S.ticker, 'Chương trình giải trí · nội dung do AI tạo · quà tặng là ủng hộ kênh', `Mục tiêu tim: ${fmt(goal.n)} / ${fmt(goal.target)} — đủ tim cả lớp tung mũ chúc mừng`, 'Điểm danh mỗi ngày để giữ chuỗi sao · thứ Hai bảng thi đua về 0 · điểm trọn đời giữ nguyên', 'Gõ “lên bảng” · “học bạ” · “tổ 1…4” để chơi cùng cô'].filter(Boolean);
   const k = Math.floor(t / 6000) % tips.length, line = tips[k], a = Math.min(1, ((t % 6000) / 400), (6000 - (t % 6000)) / 400);
   txt(line,CX,1266,fit(line,680,15,SANS,'700'),'#ffe9b8','center',null,{a});
 }
@@ -374,6 +408,11 @@ function joinToast(t){
 
 // ---------------- hiệu ứng nổi ----------------
 function fx(t){
+  while (S.fwQ.length && S.fwQ[0].t <= t) { const f = S.fwQ.shift(); for (let i = 0; i < 34; i++) { const a = i / 34 * Math.PI * 2 + Math.random() * .2, sp = 2.2 + Math.random() * 3.6; S.spark.push({ x: f.x, y: f.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, a: 1, c: f.c }); } }
+  if (S.spark.length > 700) S.spark.splice(0, S.spark.length - 700);
+  S.spark = S.spark.filter(p => p.a > 0);
+  for (const p of S.spark) { p.x += p.vx; p.y += p.vy; p.vx *= .985; p.vy = p.vy * .985 + .06; p.a -= .012; x.globalAlpha = Math.max(0, p.a); x.fillStyle = p.c; x.beginPath(); x.arc(p.x, p.y, 2.8, 0, 7); x.fill(); }
+  x.globalAlpha = 1;
   S.stars = S.stars.filter(s => t - s.t < 2400);
   for (const s of S.stars) { const k = (t - s.t) / 2400, sc = k < .15 ? k / .15 * 1.3 : 1.3 - Math.min(.3, (k - .15) * 1.2); star(s.x, s.y - 20 - 40 * ease(Math.min(1, k * 1.4)), 20 * sc, k * 3, '#ffd23f'); txt('10',s.x,s.y - 14 - 40 * ease(Math.min(1, k * 1.4)),`800 ${Math.round(16*sc)}px ${SANS}`,'#b8680c','center',null,{a:1-Math.max(0,(k-.7)/.3)}); }
   S.floats = S.floats.filter(f => t - f.t < 1900);
@@ -381,33 +420,65 @@ function fx(t){
   S.hearts = S.hearts.filter(h => t - h.t < 2000);
   for (const h of S.hearts) { const k = (t - h.t) / 2000; if (k < 0) continue; heart(h.x + Math.sin(k * 6 + h.ph) * 14, h.y - 20 - k * 120, h.s / 12, `rgba(255,90,138,${1 - k})`); }
   // giấy màu + mũ tốt nghiệp bay
-  for (const p of S.conf) { p.x += p.vx; p.y += p.vy; p.vy += .3; p.r += p.vr; p.a -= .0045; }
+  for (const p of S.conf) { p.x += p.vx + (p.petal ? Math.sin(p.r * 1.4) * .9 : 0); p.y += p.vy; p.vy += p.petal ? .012 : .3; p.r += p.vr; p.a -= .0045; }
   S.conf = S.conf.filter(p => p.a > 0 && p.y < H + 40);
-  for (const p of S.conf) { x.save(); x.globalAlpha = Math.max(0, p.a); if (p.cap) cap(p.x, p.y, 1.6 * p.w, p.r); else { x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.w/2, -p.w/4, p.w, p.w/2); } x.restore(); }
+  for (const p of S.conf) { x.save(); x.globalAlpha = Math.max(0, p.a); if (p.cap) cap(p.x, p.y, 1.6 * p.w, p.r); else if (p.petal) { x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.beginPath(); x.ellipse(0, 0, p.w * .7, p.w * .38, 0, 0, 7); x.fill(); } else { x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.w/2, -p.w/4, p.w, p.w/2); } x.restore(); }
 }
 const TIERS = { cert: { head: 'GIẤY KHEN', sub: 'Cảm ơn bạn đã ủng hộ lớp học', cl: RED }, lt: { head: 'LỚP TRƯỞNG', sub: 'Mời bạn lên ngồi bàn đầu · huy hiệu cả tuần', cl: '#c98a00' },
-  vinh: { head: 'LỄ TUYÊN DƯƠNG', sub: 'Tên bạn được ghi vào SỔ VÀNG của lớp', cl: '#b8780a' }, goal: { head: 'TUNG MŨ!', sub: '', cl: '#2a7fb8' }, jump: { head: 'NHẢY DÂY!', sub: 'Cả lớp cùng nhảy', cl: '#d6578a' } };
+  vinh: { head: 'LỄ TUYÊN DƯƠNG', sub: 'Tên bạn được ghi vào SỔ VÀNG của lớp', cl: '#b8780a' }, goal: { head: 'TUNG MŨ!', sub: '', cl: '#2a7fb8' }, fw: { head: 'PHÁO HOA!', sub: '', cl: '#c2185b' }, hoi: { head: 'NGÀY HỘI!', sub: '', cl: '#e65100' }, len: { head: 'LÊN BẢNG!', sub: 'Mời bạn trả lời câu hỏi của cô', cl: '#2a7fb8' }, jump: { head: 'NHẢY DÂY!', sub: 'Cả lớp cùng nhảy', cl: '#d6578a' } };
 function big(t){
-  if (!S.big) { const n = S.bigQ.shift(); if (!n) return; S.big = { ...n, t0: t }; if (n.k === 'vinh') { conf(70, CX, 700, 520); caps(CX, 900); } else if (n.k === 'cert' || n.k === 'lt') conf(40, CX, 700, 420); else if (n.k === 'goal') caps(CX, 1000); }
+  if (!S.big) { const n = S.bigQ.shift(); if (!n) return; S.big = { ...n, t0: t }; if (n.k === 'vinh') { conf(70, CX, 700, 520); caps(CX, 900); } else if (n.k === 'cert' || n.k === 'lt') conf(40, CX, 700, 420); else if (n.k === 'goal') caps(CX, 1000); else if (n.k === 'fw') fireworks(7, t); else if (n.k === 'hoi') { conf(80, CX, 700, 520); caps(CX, 900); fireworks(10, t); } }
   const b = S.big, age = t - b.t0, dur = b.dur || 4500; if (age > dur) { S.big = null; return; }
   const a = Math.min(1, age / 250, (dur - age) / 350), sc = .8 + .2 * ease(Math.min(1, age / 350)), T = TIERS[b.k] || TIERS.cert, cy = 600;
   x.save(); x.globalAlpha = a; x.fillStyle = 'rgba(30,15,0,.45)'; x.fillRect(0,0,W,H); x.translate(CX, cy); x.scale(sc, sc);
-  if (b.k === 'goal' || b.k === 'jump') { txt(T.head,0,-10,`96px ${SIGN}`,'#fff7d6','center',[T.cl,12],{sh:['rgba(0,0,0,.4)',16]}); if (b.sub) txt(b.sub,0,40,`800 24px ${SANS}`,'#fff','center',['rgba(0,0,0,.6)',5]); }
+  if (b.k === 'goal' || b.k === 'jump' || b.k === 'fw' || b.k === 'hoi') { txt(T.head,0,-10,`96px ${SIGN}`,'#fff7d6','center',[T.cl,12],{sh:['rgba(0,0,0,.4)',16]}); if (b.sub) txt(b.sub,0,40,`800 24px ${SANS}`,'#fff','center',['rgba(0,0,0,.6)',5]); }
   else {
+    if (b.k === 'len') { x.save(); x.fillStyle=lg(0,-360,0,170,[[0,'rgba(255,245,170,.6)'],[1,'rgba(255,245,170,0)']]); x.beginPath(); x.moveTo(-70,-360); x.lineTo(70,-360); x.lineTo(330,170); x.lineTo(-330,170); x.closePath(); x.fill(); x.restore(); }
     x.shadowColor='rgba(0,0,0,.5)'; x.shadowBlur=24; x.fillStyle='#fff8e4'; rr(-290,-170,580,340,22); x.fill(); x.shadowBlur=0;
     x.strokeStyle = T.cl; x.lineWidth = 8; rr(-278,-158,556,316,16); x.stroke(); x.strokeStyle = GOLD; x.lineWidth = 3; rr(-266,-146,532,292,12); x.stroke();
-    txt(T.head,0,-96,fit(T.head,470,66,SIGN,''),T.cl,'center'); txt(b.k === 'lt' ? 'huy hiệu tuần này' : 'tặng bạn', 0, -66, `700 18px ${SANS}`, '#8a6a3a');
-    head(-190, 2, 44, b, GOLD); if (b.k === 'lt') crown(-190, -52, 3);
+    txt(T.head,0,-96,fit(T.head,470,66,SIGN,''),T.cl,'center'); txt(b.k === 'lt' ? 'huy hiệu tuần này' : b.k === 'len' ? 'cô mời bạn' : 'tặng bạn', 0, -66, `700 18px ${SANS}`, '#8a6a3a');
+    head(b.k === 'len' ? -196 : -190, 2, b.k === 'len' ? 52 : 44, b, GOLD); if (b.k === 'lt') crown(-190, -52, 3);
     txt(short(b.name, 14), 40, 6, fit(short(b.name, 14), 330, 44, SANS, '800'), INK);
     txt(T.sub, 0, 82, fit(T.sub, 500, 20, SANS, '700'), '#8a6a3a'); txt(b.gift ? `Quà: ${b.gift}` : '', 0, 112, `600 16px ${SANS}`, '#b08a5a');
     star(236,-120,26,age/700,'#ffd23f'); star(-236,-120,26,-age/700,'#ffd23f'); x.fillStyle=RED; x.beginPath(); x.arc(210,128,24,0,7); x.fill(); star(210,128,13,0,'#fff3a8','#fff3a8'); }
   x.restore();
 }
 
+// ---------------- thẻ học bạ (gõ “học bạ”): 6 giây, xếp hàng nếu nhiều người ----------------
+function hocBaCard(t){
+  if (!S.hb) { if (S.big || !S.hbQ.length) return; S.hb = { ...S.hbQ.shift(), t0: t }; }
+  const b = S.hb, age = t - b.t0, dur = 6000; if (age > dur) { S.hb = null; return; }
+  const a = Math.min(1, age / 220, (dur - age) / 300), sc = .92 + .08 * ease(Math.min(1, age / 300)), lc = LVCOL[b.lv] || LVCOL[0];
+  x.save(); x.globalAlpha = a; x.translate(CX, 640); x.scale(sc, sc);
+  x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 24; x.fillStyle = '#fffaf0'; rr(-300, -190, 600, 380, 22); x.fill(); x.shadowBlur = 0;
+  x.strokeStyle = lc; x.lineWidth = 8; rr(-290, -180, 580, 360, 16); x.stroke(); x.strokeStyle = GOLD; x.lineWidth = 2.5; rr(-278, -168, 556, 336, 11); x.stroke();
+  txt('HỌC BẠ', 0, -124, `52px ${SIGN}`, RED, 'center');
+  head(-214, -44, 46, b, lc);
+  txt(short(b.name, 14), -154, -52, fit(short(b.name, 14), 330, 30, SANS, '800'), INK, 'left');
+  x.fillStyle = lc; rr(-154, -36, 196, 28, 14); x.fill(); txt(b.title, -56, -16, fit(b.title, 184, 15, SANS, '800'), '#fff');
+  x.fillStyle = TEAMCOL[(b.team || 1) - 1]; rr(52, -36, 70, 28, 14); x.fill(); txt(`Tổ ${b.team}`, 87, -16, `800 15px ${SANS}`, '#fff');
+  const L = (lab, val, px, py) => { txt(lab, px, py, `600 17px ${SANS}`, '#8a6a3a', 'left'); txt(String(val), px + 150, py, `800 19px ${SANS}`, INK, 'left'); };
+  L('Điểm trọn đời', fmt(b.points), -262, 36); L('Điểm tuần này', fmt(b.wp), 20, 36);
+  L('Điểm danh liền', `${b.streak} ngày`, -262, 66); L('Câu trả lời đúng', fmt(b.right), 20, 66);
+  txt(b.next != null ? `Còn ${fmt(Math.max(0, b.next - b.points))} điểm nữa lên hạng “${LVNAME[b.lv + 1]}”` : 'Bạn đang ở hạng cao nhất — giỏi lắm!', 0, 96, `700 16px ${SANS}`, '#b8680c', 'center');
+  // huy hiệu
+  if (!b.badges.length) txt('Chưa có huy hiệu — chơi tiếp cùng cô nhé!', 0, 128, `600 15px ${SANS}`, '#8a6a3a', 'center');
+  else { x.font = `800 14px ${SANS}`; const ws = b.badges.map(z => x.measureText(z).width + 22), tot = ws.reduce((p, c) => p + c + 8, -8); let px = -tot / 2;
+    b.badges.forEach((z, i) => { x.fillStyle = '#ffe9a8'; rr(px, 110, ws[i], 26, 13); x.fill(); x.strokeStyle = '#e0a800'; x.lineWidth = 1.5; rr(px, 110, ws[i], 26, 13); x.stroke(); txt(z, px + ws[i] / 2, 128, `800 14px ${SANS}`, '#7a4a1a'); px += ws[i] + 8; }); }
+  // nhiệm vụ trong buổi
+  txt('Nhiệm vụ buổi này:', -262, 164, `700 15px ${SANS}`, '#8a6a3a', 'left');
+  [['dd', 'Điểm danh'], ['ans', 'Trả lời'], ['tim', 'Thả tim']].forEach(([k, lab], i) => { const px = -112 + i * 120, ok = b.mis && b.mis[k];
+    x.fillStyle = ok ? '#43a047' : 'rgba(0,0,0,.08)'; x.beginPath(); x.arc(px, 159, 10, 0, 7); x.fill();
+    if (ok) { x.strokeStyle = '#fff'; x.lineWidth = 3; x.beginPath(); x.moveTo(px - 5, 159); x.lineTo(px - 1, 164); x.lineTo(px + 6, 153); x.stroke(); }
+    txt(lab, px + 16, 164, `700 15px ${SANS}`, ok ? '#2e7d32' : '#8a6a3a', 'left'); });
+  if (b.mis && b.mis.done) txt('HS chăm!', 262, 164, `800 15px ${SANS}`, '#e65100', 'right');
+  x.restore();
+}
+
 // ---------------- khung hình ----------------
 function frame(){
   const t = now(); x.setTransform(SC,0,0,SC,0,0);
-  blit(BG); title(t); board(t); teacherDesk(t); teacher(t); speech(t); hint(t); ranks(t); classroom(t); joinToast(t); fx(t); big(t); bottomBar(t);
+  blit(BG); title(t); board(t); teacherDesk(t); teacher(t); speech(t); hint(t); ranks(t); classroom(t); joinToast(t); fx(t); big(t); hocBaCard(t); bottomBar(t);
   requestAnimationFrame(frame);
 }
 
@@ -473,7 +544,7 @@ function handle(m){
   const t = now();
   switch (m.t) {
     case 'ver': checkVer(m.ver); break;
-    case 'snapshot': checkVer(m.ver); setSeats(m.seats); Object.assign(S, { top: m.top || [], book: m.book || [], lt: m.lt || null, likes: m.likes || 0, goal: m.goal || S.goal, hoa: m.hoa || 0, tri: !!m.tri, sess: m.sess || [], ticker: m.ticker || '', recess: m.recess || S.recess });
+    case 'snapshot': checkVer(m.ver); setSeats(m.seats); Object.assign(S, { top: m.top || [], book: m.book || [], lt: m.lt || null, likes: m.likes || 0, goal: m.goal || S.goal, hoa: m.hoa || 0, tri: !!m.tri, sess: m.sess || [], ticker: m.ticker || '', recess: m.recess || S.recess, wait: m.wait || S.wait, teams: m.teams || S.teams });
       if (m.seg) setSeg(m.seg); setQ(m.q); break;
     case 'seats': setSeats(m.seats); break;
     case 'top': S.top = m.top || []; S.book = m.book || S.book; S.lt = m.lt || null; break;
@@ -485,10 +556,23 @@ function handle(m){
     case 'ans': { if (S.q) S.q.n = m.n; const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y - 40, text: m.v, cl: m.v.length === 1 ? ABC['ABCD'.indexOf(m.v)] || '#fff' : '#fff', size: 22 }); S.cheer.set(m.id, t + 700); break; }
     case 'ok': float(m.id, '✓', '#9fe3b6', 24); break;
     case 'qend': { S.qend = m; if (S.q) S.q.done = true; (m.win || []).forEach((w, i) => { S.cheer.set(w.id, t + 3500); const p = at(w.id); if (w.ten) S.stars.push({ t: t + i * 200, x: p.x, y: p.y }); S.floats.push({ t, x: p.x, y: p.y - 70, text: `+${w.pts}`, cl: '#ffe27a', size: 20 }); });
+      if (m.spot) { const sp = m.spot; float(sp.id, sp.ok ? 'Lên bảng: đúng! +8' : sp.answered ? 'Chưa đúng, cố lên nhé!' : 'Cô chờ bạn trả lời!', sp.ok ? '#ffe27a' : '#ffb199', 17, -64); }
       if (m.win && m.win.length) { ting(); act('khen', 3200); } else act('ngac', 2400); break; }
     case 'dd': S.dd.push({ name: m.name, streak: m.streak }); if (S.dd.length > 12) S.dd.shift(); S.cheer.set(m.id, t + 900); float(m.id, m.bonus ? `Chuỗi ${m.streak} ngày! +${m.bonus}` : 'Có mặt!', '#9fe3b6', 17); if (m.bonus) { conf(30, at(m.id).x, at(m.id).y, 120); ting(); } break;
     case 'recess': { const was = S.recess.done; S.recess = m; if (m.done && !was) { S.jumpUntil = t + 12000; S.bigQ.push({ k: 'jump', dur: 3200 }); caps(CX, 1000); ting(); act('khen', 4000); } break; }
     case 'tk': S.tk = m; S.sess = m.rows || S.sess; conf(50, CX, 800, 500); ting(); break;
+    case 'kt': S.tk = { rows: m.rows || [], exam: true }; S.q = null; S.qend = null; if ((m.rows || []).length) { conf(40, CX, 800, 480); ting(); act('khen', 3000); } break;
+    case 'spot': S.bigQ.push({ k: 'len', name: m.name, avatar: m.avatar, id: m.id, dur: 3000 }); S.cheer.set(m.id, t + 3000); act('point', 2400); break;
+    case 'lb': float(m.id, m.full ? 'Hàng chờ đã đầy, thử lại sau nhé' : `Hàng chờ lên bảng: số ${m.pos}${m.paid ? ' (ưu tiên)' : ''}`, '#9fe3b6', 15); S.cheer.set(m.id, t + 900); break;
+    case 'wait': S.wait = { size: m.size || 0, list: m.list || [] }; break;
+    case 'team': float(m.id, `Vào tổ ${m.team}`, TEAMCOL[m.team - 1] || '#fff', 16); break;
+    case 'teams': S.teams = { tp: m.tp || [0,0,0,0], tps: m.tps || [0,0,0,0] }; break;
+    case 'mission': float(m.id, 'Học sinh chăm! +3', '#ffe27a', 17); S.cheer.set(m.id, t + 1800); conf(24, at(m.id).x, at(m.id).y, 120); ting(); break;
+    case 'hb': if (S.hbQ.length < 4) S.hbQ.push(m); break;
+    case 'hoa': S.hoa = m.hoa ?? S.hoa; { const p = at(m.id); for (let k = 0; k < 4; k++) S.hearts.push({ t: t + k * 90, x: p.x + (Math.random() - .5) * 26, y: p.y, s: 14, ph: k }); float(m.id, 'Tặng hoa cô giáo!', '#ff9ac0', 15); } break;
+    case 'bow': act('cui', 4400); petals(46); ting(); break;
+    case 'fw': S.bigQ.push({ k: 'fw', sub: `${fmt(m.n)} tim`, dur: 3600 }); act('khen', 3600); ting(); break;
+    case 'hoi': S.bigQ.push({ k: 'hoi', sub: `${fmt(m.n)} tim · bạn đang có mặt được +5 điểm`, dur: 5200 }); act('khen', 5000); ting(); break;
     case 'lv': float(m.id, `Lên hạng: ${m.title}`, '#ffe27a', 16, -22); S.cheer.set(m.id, t + 2000); break;
     case 'nudge': S.nudge.set(m.id, t + 6000); float(m.id, 'Cô gọi bạn!', '#ffd23f', 16); break;
     case 'me': float(m.id, `${m.points} điểm · ${m.title}`, '#fff', 15); break;
