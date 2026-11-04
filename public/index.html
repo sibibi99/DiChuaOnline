@@ -767,15 +767,19 @@ function frame(){
   x.restore();
   frameRest(t,K,ca);
 }
-// phụ đề bài giảng (lời an lạc / chuyện đời) trên sân, giữ thêm 4 giây sau câu để câu kế nối liền không nháy
+// phụ đề bài giảng (lời an lạc / chuyện đời) GIỮA màn hình (đài sen dưới tượng, chừa mặt Phật), chữ lớn cho dễ đọc;
+// sen tri ân đang bay lên thì khung trượt xuống sân để không che sen. Giữ thêm 4 giây sau câu để câu kế nối liền không nháy
+const TALK_MID = 650, TALK_LOW = 1100;
 function drawTalk(t){
   const c=S.talkCap; if(!c) return;
   const a=Math.min(1,(t-c.t)/400, c.end?Math.max(0,1-(t-c.end-4000)/600):1); if(a<=0){ if(c.end) S.talkCap=null; return; }
-  const F=`italic 600 20px ${SERIF}`, ls=wrap(c.text,600,F).slice(0,3), h=40+ls.length*27, Y=1090;
+  const F=`italic 700 27px ${SERIF}`, ls=wrap(c.text,620,F).slice(0,4), h=50+ls.length*36;
+  const goal=(S.lotusUp&&S.lotusUp.length)?TALK_LOW:TALK_MID; S.talkY=S.talkY==null?goal:S.talkY+(goal-S.talkY)*.12;
+  const Y=Math.round(S.talkY-h/2);
   x.save(); x.globalAlpha=a;
-  x.fillStyle='rgba(38,9,2,.8)'; rr(30,Y,W-60,h,16); x.fill(); x.strokeStyle='rgba(232,176,74,.75)'; x.lineWidth=1.5; x.stroke();
-  txt(`✦  ${(c.k||'').toUpperCase()} · ${c.title}  ✦`,CX,Y+24,`800 13px ${SANS}`,'#ffd98a','center',null,{spacing:2});
-  ls.forEach((l,i)=>txt(l,CX,Y+52+i*27,F,'#fff4dc','center',['rgba(30,6,0,.85)',3]));
+  x.fillStyle='rgba(38,9,2,.84)'; rr(24,Y,W-48,h,18); x.fill(); x.strokeStyle='rgba(232,176,74,.85)'; x.lineWidth=2; x.stroke();
+  txt(`✦  ${(c.k||'').toUpperCase()} · ${c.title}  ✦`,CX,Y+28,`800 15px ${SANS}`,'#ffd98a','center',null,{spacing:2});
+  ls.forEach((l,i)=>txt(l,CX,Y+64+i*36,F,'#fff4dc','center',['rgba(30,6,0,.9)',4]));
   x.restore();
 }
 // ---------------- cảnh núi sống động ----------------
@@ -992,7 +996,7 @@ function frameRest(t,K,ca){
   drawBanner(t);
   drawGoal(t);
   drawStats(t);
-  if(!S.que&&!bigBusy()) drawInfo(t);
+  if(!S.que&&!bigBusy()&&!S.talkCap) drawInfo(t);   // đang giảng thì nhường chỗ cho khung chữ giữa màn hình
   drawCombo(t);
   drawSegText(t);
   drawTalk(t);
