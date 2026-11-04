@@ -10,11 +10,8 @@ const cfgFile = process.env.CHUA_CONFIG || (fs.existsSync(path.join(__dirname, '
 const cfg = JSON.parse(fs.readFileSync(path.resolve(__dirname, cfgFile), 'utf8'));
 if (process.env.PORT) cfg.port = +process.env.PORT;
 if (process.env.VOICE_ENGINE) cfg.voice.engine = process.env.VOICE_ENGINE;
-// GAME=bia-hoi (hoặc "game" trong config): chạy Bia Hơi Đảo Thần Tiên thay Chùa Online, cùng cổng / cùng link nguồn
 const GAME = process.env.GAME || cfg.game || 'chua';
-const { Room } = require(GAME === 'bia-hoi' ? './lib/bia-hoi/room' : './lib/room');
-// Bia Hơi đọc giọng riêng (mặc định Adam bựa miền Bắc của Voice Lab); đổi bằng config.biaHoi.voice, Chùa giữ giọng cũ
-if (GAME === 'bia-hoi' && cfg.voice.voicelab) cfg.voice.voicelab = { ...cfg.voice.voicelab, voice: cfg.biaHoi?.voice || 'vi-adam-bua' };
+const { Room } = require('./lib/room');
 console.log('Cấu hình:', cfgFile, '| game:', GAME);
 
 const engine = new VoiceEngine(cfg.voice);
@@ -92,7 +89,7 @@ const server = http.createServer((req, res) => {
     else if (seg[2] === 'share') r.onShare(who);
     else if (seg[2] === 'seg') r.nextSeg();   // chuyển ngay sang khóa lễ / minigame kế (thử / người dẫn tự chuyển)
     else if (seg[2] === 'join') r.onJoin(who);
-    else r.onChat(who, u.searchParams.get('text') || (GAME === 'bia-hoi' ? 'dzô' : 'Nam mô A Di Đà Phật'));
+    else r.onChat(who, u.searchParams.get('text') || 'Nam mô A Di Đà Phật');
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('ok');
   }
   res.writeHead(404); res.end('Không tìm thấy');
@@ -107,7 +104,7 @@ function sendFile(res, f) {
 // Phiên bản giao diện = dấu của index.html + ảnh nền. Đổi file → overlay (LIVE Studio / OBS) tự tải lại, không phải bấm tay.
 const PUB = path.join(__dirname, 'public');
 // CHUA_PAGE=<file>: server thử dùng trang khác trong public/ (sửa giao diện mới mà khung đang live không tự tải theo)
-const PAGE = process.env.CHUA_PAGE || (GAME === 'bia-hoi' ? 'bia-hoi.html' : 'index.html');
+const PAGE = process.env.CHUA_PAGE || 'index.html';
 const WATCH = [PAGE, path.join('img', 'chanh-dien.jpg')];
 function uiVersion() {
   const h = require('crypto').createHash('sha1');
@@ -151,7 +148,7 @@ for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'])
   process.on(sig, () => { for (const r of Object.values(rooms)) if (r.saveT) r.flush(); process.exit(0); });
 
 server.listen(cfg.port || 3000, () => {
-  console.log(`\n${GAME === 'bia-hoi' ? 'Bia Hơi Đảo Thần Tiên' : 'Chùa Online'} đang chạy:`);
+  console.log(`\nChùa Online đang chạy:`);
   for (const p of Object.keys(rooms)) console.log(`  ${p.padEnd(9)} → http://localhost:${cfg.port || 3000}/${p}`);
   console.log(`Giọng đọc: ${cfg.voice.enabled ? cfg.voice.engine : 'tắt'}\n`);
 });

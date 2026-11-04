@@ -1,4 +1,4 @@
-# Nhạc nền Bia Hơi Đảo Thần Tiên
+# Nhạc nền (nhạc có quyền sử dụng)
 
 Bỏ tệp `.mp3` / `.ogg` / `.m4a` / `.wav` vào thư mục này, game tự phát trộn ngẫu nhiên, hết bài sang bài.
 Thư mục trống thì game dùng nhạc EDM tự tạo trong trình duyệt (không bản quyền).
