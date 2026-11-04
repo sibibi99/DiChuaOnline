@@ -1187,6 +1187,7 @@ function handle(m){
       const p=S.anchor.get(m.id); if(p) S.floats.push({t,x:p.x,y:p.y,icon:'mo',text:'+1',size:15}); S.bows.set(m.id,t); maybeVisit(m.id,t); break; }
     case 'crowd': S.bigQ.unshift({k:'pq',crowd:true,joins:m.joins,viewers:m.viewers}); break;   // người vào đông: Phật quang phổ chiếu
     case 'goaldone': if (m.goal) S.goal=m.goal; S.bigQ.unshift({k:'goal',target:m.target}); break;   // đủ tim: chen lên đầu hàng hiệu ứng
+    case 'hello': S.toasts.push({t,icon:'qua',l1:`Chào mừng ${m.show}`,l2:'đã đến Không Gian An Lạc · gõ một chữ để rút thẻ'}); break;
     case 'vip': S.toasts.push({t,icon:'qua',l1:`Chào mừng tri kỷ ${m.name}`,l2:`${m.title} · đã trở về Không Gian An Lạc`}); S.likeBoost+=25; S.joins.set(m.id,t);
       addCranes(2,m.name,t,430); S.gust=t; for(let i=0;i<20;i++) S.petals.push(peach(t,true)); break;
     case 'follow': addCranes(1,m.name,t); S.likeBoost+=10; pushLotus(t,m.name,'theo dõi kênh'); break;   // theo dõi kênh: một cánh hạc mang tên bay ngang trời
