@@ -2,15 +2,15 @@
 
 **Câu chốt trên màn hình:** "Gõ một chữ — có ngay chỗ ngồi trong lớp cô giáo!"
 
-## 1. Một buổi live = một buổi học 12 phút, lặp lại
-| Phút | Tiết | Người xem làm gì |
+## 1. Một buổi live = một buổi học khoảng 10 phút, lặp lại
+| ~Phút | Tiết | Người xem làm gì |
 |---|---|---|
-| 0–1 | **Điểm danh** | Gõ "có mặt" → tên hiện trên bảng, đủ chuỗi ngày liền có sao |
-| 1–4 | **Tiết Đố vui** | Câu hỏi A/B/C/D, 20 giây. Ai đúng NHANH nhất tên lên bảng, cô khen bằng giọng đọc |
-| 4–6 | **Tiết Chính tả / Toán nhẩm** | Gõ đáp án, 3 người đúng đầu tiên được "Điểm 10" |
-| 6–7 | **Ra chơi** | Thả tim → cả lớp nhảy dây, đá cầu; đủ mốc tim thì cả lớp tung mũ |
-| 7–10 | **Tiết Mẹo vui / Kể chuyện** | Cô kể chuyện ngắn, cuối bài có 1 câu hỏi nhanh |
-| 10–12 | **Tổng kết** | Cô đọc tên top 3 buổi, tặng "Phiếu bé ngoan" |
+| 1 | **Điểm danh** | Gõ "có mặt" → tên hiện trên bảng, đủ chuỗi ngày liền có sao |
+| 3 | **Đố vui** (5 câu) | Câu hỏi A/B/C/D, 20 giây. Ai đúng NHANH nhất tên lên bảng, cô khen bằng giọng đọc |
+| 2 | **Toán nhẩm + Chính tả** (4 câu) | Gõ đáp án, 3 người đúng đầu tiên được "Điểm 10" |
+| 1 | **Ra chơi** | Thả tim → cả lớp nhảy dây, đá cầu; đủ mốc tim thì cả lớp tung mũ |
+| 1,5 | **Giờ kể chuyện** | Cô kể chuyện ngắn, cuối bài có 1 câu hỏi nhanh |
+| 0,5 | **Tổng kết** | Cô đọc tên top 3 buổi, tặng "Phiếu bé ngoan" |
 
 ## 2. Cách có chỗ ngồi
 - Gõ bất kỳ chữ → nhân vật (ảnh đại diện làm đầu) chạy vào lớp, cô chào đúng tên.
@@ -59,3 +59,11 @@ Lời cô khi nhận quà chỉ có: **cảm ơn + chúc** (ví dụ "Cảm ơn 
 - **20/11 Ngày Nhà giáo:** tuần tri ân, bục tặng hoa, cô mặc áo dài.
 - Cuối tuần: "Lễ tổng kết tuần" đọc top 10 và tặng danh hiệu.
 - Đầu mỗi tháng: "Khai giảng" reset bảng tháng, giữ điểm trọn đời.
+
+## 8. Ghi chú bản dựng đầu (04/11)
+- Nhánh `game/lop-hoc`, chạy bằng `GAME=lop-hoc` (cùng cổng 3100). Giọng cô: Voice Lab `vi-mai-anh` (đổi bằng `config.lopHoc.voice`).
+- Cô giáo: ảnh mẫu 3 (áo dài hoa đào) đã tách nền, bỏ ngôi sao trên sổ. Phòng học vẽ bằng code (OpenAI hết credit nên chưa có nền AI).
+- Kho câu: 80 đố vui + 28 chính tả + 18 truyện kể + toán nhẩm tự sinh. Cần thêm tới khoảng 200 câu.
+- Bàn đầu: Lớp trưởng (quà nhiều nhất tuần) ở giữa, người tặng quà lớn ngồi 40 phút, rồi tới người điểm học cao nhất tuần.
+- Tuần tri ân tự bật 12–20/11 (hoặc `lopHoc.triAn: true`): quà dạng hoa = tặng hoa cô giáo.
+- Cấu hình tuỳ chọn `lopHoc`: `speed` (chạy nhanh để thử), `likeGoal`, `triAn`, `voice`, `ticker`.
