@@ -122,3 +122,6 @@ Giờ ra chơi ~110 giây: thả tim → **đố nhanh 1** → **MỘT TRÒ CHƠ
 5. **Rồng rắn lên mây** (~45 giây): gõ `rồng rắn` / `rong ran` để nối ảnh đại diện vào đuôi con rồng chạy quanh lớp; mốc 10 / 20 / 50 khúc có pháo giấy; +1 điểm tham gia.
 - Thử: `/test/<nền tảng>/game?kind=rps|tug|hang|count|dragon`; `node tools/test-tro-choi.js` (nhận lệnh có / không dấu, chống spam, điểm, giọng ≤ 2 câu cho từng trò).
 
+## 15. Chặn từ thô trong tên và bình luận (04/11)
+Tên người xem chứa từ thô (ỉa, đái, cứt, thối, địt, đụ, lồn, buồi, cặc, đéo, đm, vcl, vl, dm, clm, cc, ỉa chảy…) → hiện **"Bạn nhỏ"** trên màn hình và cô đọc **"một bạn"**; bình luận chứa các từ đó **không hiện, không đọc**. So khớp **theo từ** (không dính "tia", "dịu", "buổi", "ICC"). Bản có dấu luôn chặn; bản không dấu chỉ chặn từ ít nhầm (vcl, vl, dm, clm, cc, ia chay, dit, cut) — KHÔNG chặn "lon", "cac", "du", "dai", "thoi", "buoi", "deo" không dấu vì trùng "lớn, các, dù, dài, thôi, buổi, đeo". Tên cũ trong sổ lớp có từ thô được đổi thành "Bạn nhỏ" khi nạp. Test: `node tools/test-ten-tho.js`.
+
