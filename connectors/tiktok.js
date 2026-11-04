@@ -40,14 +40,18 @@ module.exports = function startTikTok(room, opt) {
       console.log('[tiktok] đã kết nối phòng', st?.roomId || '');
       retry = 15000; room.live = true;
     } catch (e) {
-      console.log('[tiktok] chưa kết nối được:', e?.message || e, '→ thử lại sau', retry / 1000, 'giây');
+      const msg = String(e?.message || e);
+      // máy chủ ký Euler giới hạn số lần nối mỗi giờ: thử dày chỉ làm khoá kéo dài -> giãn 5 phút
+      if (/rate.?limit/i.test(msg)) { console.log('[tiktok] máy chủ ký báo quá giới hạn lượt nối → chờ 5 phút rồi thử lại'); later(5 * 60000); return; }
+      console.log('[tiktok] chưa kết nối được:', msg, '→ thử lại sau', retry / 1000, 'giây');
       later();
     }
   }
   let timer;
-  function later() {
+  function later(ms) {
     clearTimeout(timer); try { conn?.disconnect(); } catch {} room.live = false;
-    // tối đa 30 giây: vừa bật live là overlay nhận bình luận / tim gần như ngay
+    // tối đa 30 giây: vừa bật live là overlay nhận bình luận / tim gần như ngay (trừ khi bị giới hạn lượt nối)
+    if (ms) { timer = setTimeout(connect, ms); return; }
     timer = setTimeout(connect, retry); retry = Math.min(retry * 2, 30000);
   }
   // Tắt live rồi mở lại thì TikTok cấp phòng mới nhưng không phải lúc nào cũng báo STREAM_END
