@@ -809,12 +809,15 @@ function frame(){
 }
 
 // ---------------- âm thanh: nhạc nền tự tạo (không bản quyền) hoặc nhạc trong thư mục music/ ----------------
-let AC, master, bgGain, voiceGain, musBus, BGM;
+let AC, master, bgGain, voiceGain, musBus, BGM, sfx;
+const SFXT = {}; const sfxOk = (k, ms) => { const t = performance.now(); if (t - (SFXT[k] || 0) < ms) return false; SFXT[k] = t; return true; };   // hiệu ứng âm thanh giãn cách: lớp đông không bị bíp / chuông liên tục đè lên giọng cô
 function audioInit(){
   if (AC) return; AC = new (window.AudioContext||window.webkitAudioContext)();
-  master = AC.createGain(); master.gain.value = .85; master.connect(AC.destination);
+  master = AC.createGain(); master.gain.value = .85;
+  const lim = AC.createDynamicsCompressor(); lim.threshold.value = -14; lim.knee.value = 10; lim.ratio.value = 14; lim.attack.value = .003; lim.release.value = .2; master.connect(lim); lim.connect(AC.destination);      // bộ giới hạn: giọng + hiệu ứng cùng lúc không bị vỡ tiếng
+  sfx = AC.createGain(); sfx.gain.value = .55; sfx.connect(master);
   bgGain = AC.createGain(); bgGain.gain.value = .45; bgGain.connect(master);
-  voiceGain = AC.createGain(); voiceGain.gain.value = 1.6; voiceGain.connect(master);
+  voiceGain = AC.createGain(); voiceGain.gain.value = 1.4; voiceGain.connect(master);
   musBus = AC.createGain(); musBus.gain.value = 1; musBus.connect(bgGain);
   const mode = Q.get('music');
   if (mode === 'off') {}
@@ -843,10 +846,10 @@ function startSynth(){
       if (Math.random() < .55) tone(nextT, mtof(PENTA[Math.floor(Math.random()*PENTA.length)]), 'sine', .004, .07, .7);
       nextT += beat; step++; } }, 40);
 }
-function bell(){ if (!AC) return; const w = AC.currentTime + .02; for (let i = 0; i < 7; i++) { [1180,1560].forEach(f => tone(w + i*.11, f, 'sine', .002, .16, .25, master)); } }
-function ting(){ if (!AC) return; const w = AC.currentTime + .01; [1320,1760,2093].forEach((f,i) => tone(w + i*.07, f, 'sine', .002, .12, .45, master)); }
-function pop(){ if (!AC) return; tone(AC.currentTime + .01, 520, 'triangle', .002, .08, .12, master); }
-function duck(on){ if(!AC) return; bgGain.gain.cancelScheduledValues(AC.currentTime); bgGain.gain.linearRampToValueAtTime(on?.14:.45, AC.currentTime+.3); }
+function bell(){ if (!AC || !sfxOk('bell', 5000)) return; const w = AC.currentTime + .02; for (let i = 0; i < 7; i++) { [1180,1560].forEach(f => tone(w + i*.11, f, 'sine', .002, .12, .25, sfx)); } }
+function ting(){ if (!AC || !sfxOk('ting', 1200)) return; const w = AC.currentTime + .01; [1320,1760,2093].forEach((f,i) => tone(w + i*.07, f, 'sine', .002, .12, .45, sfx)); }
+function pop(){ if (!AC || !sfxOk('pop', 2500)) return; tone(AC.currentTime + .01, 520, 'triangle', .002, .08, .12, sfx); }
+function duck(on){ if(!AC) return; bgGain.gain.cancelScheduledValues(AC.currentTime); bgGain.gain.linearRampToValueAtTime(on?.14:.45, AC.currentTime+.3); sfx.gain.cancelScheduledValues(AC.currentTime); sfx.gain.linearRampToValueAtTime(on?.2:.55, AC.currentTime+.15); }   // cô đang nói: hiệu ứng nhỏ lại
 async function speak(m){
   const ack = () => { if (S.say && S.say.id === m.id) S.say.end = now(); ws && ws.readyState===1 && ws.send(JSON.stringify({t:'spoken',id:m.id})); };
   S.say = { id: m.id, text: m.text, t: now(), end: 0, k: m.meta && m.meta.k, title: m.meta && m.meta.title };
