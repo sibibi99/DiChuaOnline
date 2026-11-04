@@ -92,6 +92,7 @@ const server = http.createServer((req, res) => {
     if (seg[2] === 'gift') r.onGift(who, u.searchParams.get('gift') || 'Sư tử', 1, +(u.searchParams.get('coins') || 299));
     else if (seg[2] === 'like') r.onLike(who, +(u.searchParams.get('count') || 5));
     else if (seg[2] === 'share') r.onShare(who);
+    else if (seg[2] === 'scene' && r.nextScene) r.nextScene(u.searchParams.get('id') || '');
     else if (seg[2] === 'seg') r.nextSeg();   // chuyển ngay sang khóa lễ / minigame kế (thử / người dẫn tự chuyển)
     else if (seg[2] === 'join') r.onJoin(who);
     else r.onChat(who, u.searchParams.get('text') || (GAME === 'bia-hoi' ? 'dzô' : GAME === 'lop-hoc' ? 'có mặt' : 'Nam mô A Di Đà Phật'));
@@ -111,6 +112,8 @@ const PUB = path.join(__dirname, 'public');
 // CHUA_PAGE=<file>: server thử dùng trang khác trong public/ (sửa giao diện mới mà khung đang live không tự tải theo)
 const PAGE = process.env.CHUA_PAGE || (GAME === 'bia-hoi' ? 'bia-hoi.html' : GAME === 'lop-hoc' ? 'lop-hoc.html' : 'index.html');
 const WATCH = [PAGE, path.join('img', 'chanh-dien.jpg'), path.join('img', 'co-giao.png')];
+// Lớp Học Vui: ảnh nền tuỳ chọn cho từng bối cảnh (sếp tạo bằng Gemini) — thêm / đổi ảnh thì overlay tự tải lại
+if (GAME === 'lop-hoc') for (const id of ['sang', 'hoanghon', 'dem', 'mua', 'thu', 'xuan', 'dong', 'thinghiem', 'thuvien', 'santruong']) WATCH.push(path.join('img', `lh-nen-${id}.jpg`));
 function uiVersion() {
   const h = require('crypto').createHash('sha1');
   for (const f of WATCH) { try { h.update(fs.readFileSync(path.join(PUB, f))); } catch {} }
