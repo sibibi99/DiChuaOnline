@@ -819,7 +819,7 @@ function audioInit(){
   const mode = Q.get('music');
   if (mode === 'off') {}
   else if (mode === 'synth') startSynth();
-  else fetch('/music').then(r=>r.json()).then(l=> l.length ? playFiles(l) : startSynth()).catch(startSynth);
+  else fetch('/music').then(r=>r.json()).then(l=> l.length ? playFiles(l) : (mode === 'synth2' && startSynth())).catch(()=>{});   // không có tệp nhạc → im (bỏ nhạc ngũ cung nghe như nhạc chùa)
   if (AC.state === 'suspended' && !/[?&]shot/.test(location.search)) document.getElementById('tap').style.display = 'flex';
 }
 function playFiles(list){
