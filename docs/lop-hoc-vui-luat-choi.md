@@ -125,3 +125,8 @@ Giờ ra chơi ~110 giây: thả tim → **đố nhanh 1** → **MỘT TRÒ CHƠ
 ## 15. Chặn từ thô trong tên và bình luận (04/11)
 Tên người xem chứa từ thô (ỉa, đái, cứt, thối, địt, đụ, lồn, buồi, cặc, đéo, đm, vcl, vl, dm, clm, cc, ỉa chảy…) → hiện **"Bạn nhỏ"** trên màn hình và cô đọc **"một bạn"**; bình luận chứa các từ đó **không hiện, không đọc**. So khớp **theo từ** (không dính "tia", "dịu", "buổi", "ICC"). Bản có dấu luôn chặn; bản không dấu chỉ chặn từ ít nhầm (vcl, vl, dm, clm, cc, ia chay, dit, cut) — KHÔNG chặn "lon", "cac", "du", "dai", "thoi", "buoi", "deo" không dấu vì trùng "lớn, các, dù, dài, thôi, buổi, đeo". Tên cũ trong sổ lớp có từ thô được đổi thành "Bạn nhỏ" khi nạp. Test: `node tools/test-ten-tho.js`.
 
+## 16. Chào theo sĩ số + không để cô đứng yên (04/11)
+- **Lớp vắng** = dưới `lopHoc.fewMax` (mặc định 12) bạn hoạt động trong 5 phút gần nhất. Lớp vắng: người vào lớp thì cô chào gọi tên (≤ 10 từ, 6 mẫu xoay vòng, ví dụ "Chào Lan vào lớp! Gõ có mặt nhé."); nhiều người vào cùng lúc gộp thành một câu ("Chào Lan, Minh và 2 bạn nữa!"); tối đa 1 câu chào / 8 giây; tên thô hay tên mặc định ("Bạn nhỏ") thì không gọi tên; người vừa chào không chào lại trong 10 phút. Lớp đông: không chào bằng giọng (như cũ).
+- **Lấp chỗ trống**: cô im quá `lopHoc.idleSec` (mặc định 20 giây; lớp đông giãn `lopHoc.idleBusySec` 45 giây) thì lấp 1 câu ngắn, xoay vòng không lặp kiểu liền nhau: mời gõ "có mặt", nhắc luật đang diễn ra, câu đùa (kho cau-dua, không lặp trong ngày), đố miệng nhanh 1 câu (không tính điểm, 7 giây sau cô nói đáp án), khen bạn vừa trả lời đúng. Chỉ khi hàng chờ giọng trống; không chen câu hỏi đang mở, trò chơi, giờ kể chuyện. Không nhắc quà / tiền.
+- Test: `node tools/test-chao.js`.
+
