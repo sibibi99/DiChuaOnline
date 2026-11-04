@@ -945,7 +945,7 @@ function frameCrowd(t,K,ca,items){
   };
   S.top.slice(0,TOPPOS.length).forEach((u,i)=>add(u,TOPPOS[i],i+1));
   S.seats.forEach((u,i)=>{ if(u&&SEATPOS[i]) add(u,SEATPOS[i],0); });
-  SEATPOS.forEach((p,i)=>{ if(!S.seats[i]) items.push({u:{id:'nen'+i},fill:true,x:p.x,y:p.y,s:p.s,bow:0,alpha:.72}); });
+  // chỗ trống để trống: chỉ người xem thật đã vào mới hiện trên sân (sếp 04/11: không vẽ sẵn đại chúng)
   items.sort((a,b)=>a.y-b.y);
   if(ca>.01){
   // người theo hầu khi Top 1 mới tiến lên chánh điện
