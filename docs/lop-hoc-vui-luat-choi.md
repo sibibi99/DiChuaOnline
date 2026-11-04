@@ -94,3 +94,10 @@ Mọi tính năng mới đều có đường chơi MIỄN PHÍ; quà chỉ thêm
 - **Chuyển cảnh**: chuông trường + lướt ~1 giây, rồi biển tên 2,5 giây (chỉ hiện chữ, không đọc); cô nhún chào.
 - **Ảnh nền do sếp tạo (Gemini)**: đặt `public/img/lh-nen-<id>.jpg` (id như trên: `sang`, `hoanghon`, `dem`, `mua`, `thu`, `xuan`, `dong`, `thinghiem`, `thuvien`, `santruong`). Có ảnh thì dùng ảnh (cover 720×1280, vẽ dưới bảng / cô / bàn) thay nền code của cảnh đó; thiếu hoặc lỗi thì tự dùng nền code. Thêm / đổi ảnh thì overlay tự tải lại. Ảnh KHÔNG có bảng đen, KHÔNG có người; chừa trống tường chỗ x66–654, y126–426 cho bảng vẽ bằng code; sàn từ y≈748 trở xuống.
 - Thử: `/test/<nền tảng>/scene?id=<id>` đổi cảnh ngay.
+
+## 11. Kho câu hỏi mở rộng (bản 1.4, 04/11)
+- **874 câu đố vui** (vn 99, vh 78, tg 96, kh 121, dv 89, toán 88, tt 55, tv 97, mẹo 64, en 87; độ khó 1/2/3 ≈ 362/366/146) và **286 cặp chính tả**. Câu mới do các agent soạn, rồi một agent khác kiểm độc lập sự thật; câu nghi ngờ đã bị loại.
+- **Không lặp câu**: các câu đã hỏi lưu ở `data/lop-hoc-used.json` (không commit), giữ qua các lần khởi động lại. Chỉ hỏi lại câu cũ khi đã hỏi hết kho hoặc sau ít nhất 7 ngày, câu lâu chưa hỏi nhất trước.
+- Câu dẫn chính tả có 10 kiểu khác nhau (thay cho một câu duy nhất).
+- Kiểm kho: `node tools/test-cau-hoi.js` (cấu trúc, 4 đáp án khác nhau, không trùng đề, không chữ nhạy cảm, số lượng tối thiểu, và thử logic chọn câu không lặp).
+
