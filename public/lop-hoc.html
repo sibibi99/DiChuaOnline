@@ -91,7 +91,7 @@ const ABC = ['#ef5350','#42a5f5','#66bb6a','#ffa726'];
 // ---------------- trạng thái ----------------
 const S = { scene: { id: 'sang', name: '' }, trans: null, banner: null, fxp: {}, seats: new Array(NSEAT).fill(null), pos: new Map(), top: [], book: [], lt: null, likes: 0, goal: { n: 0, target: 100 },
   seg: { key: 'diemdanh', name: '', sub: '', end: Date.now(), next: '', idx: 0, total: 6 }, q: null, qend: null, recess: { n: 0, target: 40, done: false }, jumpUntil: 0,
-  hoa: 0, tri: false, sess: [], story: null, tk: null, dd: [], wait: { size: 0, list: [] }, teams: { tp: [0,0,0,0], tps: [0,0,0,0] }, hbQ: [], hb: null, donors: [], game: null, rong: [], fwQ: [], spark: [],
+  hoa: 0, tri: false, sess: [], story: null, tk: null, dd: [], wait: { size: 0, list: [] }, teams: { tp: [0,0,0,0], tps: [0,0,0,0] }, hbQ: [], hb: null, donors: [], game: null, rong: [], vote: null, fwQ: [], spark: [],
   bubbles: new Map(), cheer: new Map(), nudge: new Map(), floats: [], hearts: [], stars: [], conf: [], toast: null, big: null, bigQ: [], say: null, tAct: null, ticker: '',
   ans: new Map(), last: now() };
 const at = id => { const p = S.pos.get(id); return p ? { x: p.x, y: p.y } : { x: CX, y: 1000 }; };
@@ -383,13 +383,14 @@ function board(t){
   x.strokeStyle='rgba(244,251,244,.55)'; x.lineWidth=2; x.setLineDash([8,6]); x.beginPath(); x.moveTo(X0,B.y+52); x.lineTo(XR,B.y+52); x.stroke(); x.setLineDash([]);
   const q = S.q, k = stage();
   if (q) boardQ(t, X0, XR);
+  else if (S.vote && (k === 'dovui' || k === 'kt')) boardVote(t, X0, XR);
   else if (k === 'diemdanh') boardDD(t, X0, XR);
   else if (k === 'rachoi') { if (S.game) boardGame(t, X0, XR); else boardRecess(t, X0, XR); }
   else if (k === 'ke') boardStory(t, X0, XR);
   else if (k === 'tongket' || (k === 'kt' && S.tk)) boardTK(t, X0, XR);
   else { chalk(S.seg.name.toUpperCase(),CX,B.y+170,50,'#fff','center'); chalk(S.seg.sub,CX,B.y+215,22,'#cfe9d8'); }
   // đếm ngược của tiết (không có câu hỏi)
-  if (!q && !(k === 'rachoi' && S.game)) { const left = Math.max(0, S.seg.end - Date.now()), tot = Math.max(1, S.seg.tot || left); const f = clamp(left / tot, 0, 1);
+  if (!q && !S.vote && !(k === 'rachoi' && S.game)) { const left = Math.max(0, S.seg.end - Date.now()), tot = Math.max(1, S.seg.tot || left); const f = clamp(left / tot, 0, 1);
     x.fillStyle='rgba(255,255,255,.18)'; rr(X0,B.y+B.h-30,XR-X0,10,5); x.fill(); x.fillStyle='#ffe27a'; rr(X0,B.y+B.h-30,(XR-X0)*f,10,5); x.fill(); }
   x.restore();
 }
@@ -566,6 +567,29 @@ function dragonDraw(t){
   const h = P(th), a = Math.atan2(P(th + .05).y - h.y, P(th + .05).x - h.x);
   x.save(); x.translate(h.x,h.y); x.rotate(a); x.fillStyle = '#2e7d32'; x.beginPath(); x.arc(0,0,26,0,7); x.fill(); x.fillStyle = '#ffd23f'; x.beginPath(); x.moveTo(-6,-22); x.lineTo(-2,-38); x.lineTo(6,-22); x.moveTo(6,-22); x.lineTo(14,-36); x.lineTo(18,-20); x.fill();
   x.fillStyle = '#fff'; x.beginPath(); x.arc(10,-8,6,0,7); x.arc(10,10,6,0,7); x.fill(); x.fillStyle = '#222'; x.beginPath(); x.arc(12,-8,3,0,7); x.arc(12,10,3,0,7); x.fill(); x.fillStyle = '#e53935'; x.beginPath(); x.moveTo(24,0); x.lineTo(38,-4); x.lineTo(38,4); x.closePath(); x.fill(); x.restore();
+}
+
+// ---------------- BÌNH CHỌN chủ đề + trình độ (trước tiết đố vui / kiểm tra) ----------------
+const LVN = ['Dễ', 'Vừa', 'Khó'], VCOL = ['#ef5350', '#42a5f5', '#66bb6a', '#ffa726'];
+function boardVote(t, X0, XR){
+  const B = BOARD, v = S.vote, res = v.phase === 'res', opts = v.opts || [], tc = v.tc || [0,0,0,0], lc = v.lc || [0,0,0], levels = v.levels || [1,2,3];
+  chalk('BÌNH CHỌN CÙNG CÔ',CX,B.y+86,28,'#fff','center');
+  if (!res) chalk(`${Math.ceil(Math.max(0, v.endAt - Date.now()) / 1000)} giây`,XR,B.y+82,19,'#ffe27a','right','700');
+  const bar = (px, py, w, n, mx, col, on) => { x.fillStyle = 'rgba(255,255,255,.14)'; rr(px,py,w,12,6); x.fill(); x.fillStyle = col; rr(px,py,Math.max(n ? 8 : 0, w * n / Math.max(1, mx)),12,6); x.fill(); };
+  chalk('CHỦ ĐỀ · gõ 1 2 3 4',X0+8,B.y+122,17,'#ffe27a','left','700');
+  const mxT = Math.max(1, ...tc);
+  opts.forEach((o, i) => { const py = B.y + 134 + i * 34, win = res && o.tp === v.topic;
+    if (win) { x.strokeStyle = '#ffe27a'; x.lineWidth = 3; rr(X0,py-4,300,32,10); x.stroke(); }
+    x.fillStyle = VCOL[i]; x.beginPath(); x.arc(X0+18,py+12,13,0,7); x.fill(); txt(String(i+1),X0+18,py+18,`800 16px ${SANS}`,'#fff');
+    chalk(o.name,X0+40,py+20,21,'#fff','left'); bar(X0+160,py+8,92,tc[i] || 0,mxT,VCOL[i]); chalk(String(tc[i] || 0),X0+292,py+20,18,'#ffe27a','right','700'); });
+  const LX = X0 + 330; chalk('TRÌNH ĐỘ · gõ dễ · vừa · khó',LX,B.y+122,17,'#ffe27a','left','700');
+  if (levels.length <= 1) chalk(`Hôm nay: ${LVN[(levels[0] || 1) - 1]}`,LX,B.y+170,24,'#fff','left');
+  else { const mxL = Math.max(1, ...lc); levels.forEach((l, j) => { const py = B.y + 134 + j * 40, win = res && v.level === l;
+    if (win) { x.strokeStyle = '#ffe27a'; x.lineWidth = 3; rr(LX-4,py-4,XR-LX+4,36,10); x.stroke(); }
+    chalk(LVN[l-1],LX+4,py+22,23,'#fff','left'); bar(LX+78,py+8,90,lc[l-1] || 0,mxL,['#81c784','#64b5f6','#ff8a65'][l-1]); chalk(String(lc[l-1] || 0),XR-4,py+22,18,'#ffe27a','right','700'); }); }
+  const by = B.y + 270;
+  if (!res) { const f = clamp(Math.max(0, v.endAt - Date.now()) / Math.max(1, v.total || 15000), 0, 1); x.fillStyle='rgba(255,255,255,.18)'; rr(X0,by,XR-X0,10,5); x.fill(); x.fillStyle = '#ffd23f'; rr(X0,by,(XR-X0)*f,10,5); x.fill(); }
+  else chalk(`Cả lớp chọn: ${v.topicName || ''}${v.level ? ' · mức ' + LVN[v.level-1] : ''}${v.voted ? '' : ' (cô chọn giúp)'}`,CX,by+6,23,'#9fe3b6','center','700');
 }
 
 // ---------------- cô giáo ----------------
@@ -847,13 +871,13 @@ function handle(m){
   switch (m.t) {
     case 'ver': checkVer(m.ver); break;
     case 'snapshot': checkVer(m.ver); setSeats(m.seats); Object.assign(S, { top: m.top || [], book: m.book || [], lt: m.lt || null, likes: m.likes || 0, goal: m.goal || S.goal, hoa: m.hoa || 0, tri: !!m.tri, sess: m.sess || [], ticker: m.ticker || '', recess: m.recess || S.recess, wait: m.wait || S.wait, teams: m.teams || S.teams });
-      if (m.scene) setScene(m.scene.id, m.scene.name, false); if (m.gs) handle(m.gs);
+      if (m.vote) S.vote = { phase: 'open', ...m.vote, endAt: Date.now() + (m.vote.left || 0), total: m.vote.left || 15000 }; if (m.scene) setScene(m.scene.id, m.scene.name, false); if (m.gs) handle(m.gs);
       if (m.seg) setSeg(m.seg); setQ(m.q); break;
     case 'seats': setSeats(m.seats); break;
     case 'top': S.top = m.top || []; S.book = m.book || S.book; S.lt = m.lt || null; break;
     case 'join': toast(`${short(m.name, 14)} vừa vào lớp`); pop(); break;
     case 'chat': if (m.text) S.bubbles.set(m.id, { text: m.text, t }); S.cheer.set(m.id, t + 500); break;
-    case 'seg': setSeg(m.seg); S.q = null; S.qend = null; S.tk = null; if (m.seg.key === 'diemdanh') S.dd = []; bell(); act('chao', 2600); break;
+    case 'seg': setSeg(m.seg); S.q = null; S.qend = null; S.tk = null; if (m.seg.key !== 'dovui' && m.seg.key !== 'kt') S.vote = null; if (m.seg.key === 'diemdanh') S.dd = []; bell(); act('chao', 2600); break;
     case 'story': S.story = m.title; break;
     case 'q': setQ(m.q); S.qend = null; S.ans.clear(); pop(); act('point', 1800); break;
     case 'ans': { if (S.q) S.q.n = m.n; const p = at(m.id); S.floats.push({ t, x: p.x, y: p.y - 40, text: m.v, cl: m.v.length === 1 ? ABC['ABCD'.indexOf(m.v)] || '#fff' : '#fff', size: 22 }); S.cheer.set(m.id, t + 700); break; }
@@ -865,6 +889,7 @@ function handle(m){
     case 'recess': { const was = S.recess.done; S.recess = m; if (m.done && !was) { S.jumpUntil = t + 12000; S.bigQ.push({ k: 'jump', dur: 3200 }); caps(CX, 1000); ting(); act('khen', 4000); } break; }
     case 'tk': S.tk = m; S.sess = m.rows || S.sess; conf(50, CX, 800, 500); ting(); break;
     case 'scene': setScene(m.id, m.name, true); break;
+    case 'vote': if (m.phase === 'off') S.vote = null; else { const { t: _vt, ...rest } = m; const first = !S.vote; S.vote = { ...(S.vote || {}), ...rest, endAt: Date.now() + (m.left || 0), total: first ? (m.left || 15000) : S.vote.total }; if (m.phase === 'res') { ting(); conf(30, CX, 640, 440); } else if (first) pop(); } break;
     case 'game': if (m.on) { S.game = { kind: m.kind, endAt: 0 }; if (m.kind === 'dragon') S.rong = []; } else { S.game = null; S.rong = []; } break;
     case 'rps': case 'tug': case 'hang': case 'count': { const { t: _mt, kind: ck, ...rest } = m; const g0 = S.game && S.game.kind === m.t ? S.game : {};
       S.game = { ...g0, ...rest, kind: m.t, endAt: Date.now() + (m.left || 0) }; if (m.t === 'count') S.game.kind2 = ck;

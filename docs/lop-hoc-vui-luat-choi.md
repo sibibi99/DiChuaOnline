@@ -130,3 +130,11 @@ Tên người xem chứa từ thô (ỉa, đái, cứt, thối, địt, đụ, l
 - **Lấp chỗ trống**: cô im quá `lopHoc.idleSec` (mặc định 20 giây; lớp đông giãn `lopHoc.idleBusySec` 45 giây) thì lấp 1 câu ngắn, xoay vòng không lặp kiểu liền nhau: mời gõ "có mặt", nhắc luật đang diễn ra, câu đùa (kho cau-dua, không lặp trong ngày), đố miệng nhanh 1 câu (không tính điểm, 7 giây sau cô nói đáp án), khen bạn vừa trả lời đúng. Chỉ khi hàng chờ giọng trống; không chen câu hỏi đang mở, trò chơi, giờ kể chuyện. Không nhắc quà / tiền.
 - Test: `node tools/test-chao.js`.
 
+## 17. Bình chọn chủ đề và trình độ (04/11)
+Trước tiết **Đố vui** và tiết **Kiểm tra 15 phút** (khi có ít nhất `lopHoc.voteMin` = 3 bạn đang ở lớp), cả lớp bình chọn khoảng **15 giây** (`lopHoc.voteSec`, đặt 0 để tắt) để bộ câu hỏi hợp với người đang xem:
+- **Chủ đề**: bảng đen hiện 4 lựa chọn (1 chủ đề của ngày + 3 chủ đề ngẫu nhiên, tránh 2 chủ đề vừa chọn); gõ **1, 2, 3 hoặc 4**.
+- **Trình độ**: gõ **dễ / vừa / khó** (có dấu hay không dấu). Bị giới hạn bởi `lopHoc.maxDiff` (đặt 1 thì chỉ còn mức dễ, không hiện phần chọn trình độ).
+- Mỗi người 1 phiếu mỗi loại (đổi ý thì tính phiếu cuối); thanh phiếu nhảy trực tiếp trên bảng; phiếu bình chọn không bị đọc thành bình luận. Cô chỉ nói 1 câu mở ("Đố vui! Cả lớp bình chọn chủ đề và trình độ nhé.").
+- Kết quả (nhiều phiếu nhất, hòa thì ngẫu nhiên) áp cho **cả bộ câu hỏi đó**: các câu lấy đúng chủ đề đã chọn, độ khó nhắm theo mức đã chọn; không ai bình chọn thì cô chọn chủ đề của ngày và độ khó tự điều chỉnh như cũ. Xong bộ câu thì trở lại bình thường.
+- Test: `node tools/test-binh-chon.js`.
+
