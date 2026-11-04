@@ -510,7 +510,7 @@ function speech(t){
   const s = S.say; if (!s) return;
   const age = (t - s.t) / 1000, endAge = s.end ? (t - s.end) / 1000 : 0, a = Math.min(1, age * 4, s.end ? Math.max(0, 1 - (endAge - 2.2) / .5) : 1);
   if (a <= 0) { if (s.end) S.say = null; return; }
-  const F = `700 23px ${SANS}`, tag = s.k ? `${s.k} · ${s.title}` : '', ls = wrap(s.text, 392, F).slice(0, 5), hh = 26 + ls.length * 31 + (tag ? 24 : 0);
+  const F = `700 23px ${SANS}`, tag = s.k ? `${s.k} · ${s.title}` : '', ls = wrap(s.text, 392, F).slice(0, 6), hh = 26 + ls.length * 31 + (tag ? 24 : 0);
   const BX = 252, BW = 448, BY = Math.max(436, 650 - hh);
   x.save(); x.globalAlpha = a; x.translate(0, (1 - Math.min(1, age * 5)) * 10);
   x.shadowColor='rgba(60,30,10,.4)'; x.shadowBlur=12; x.fillStyle='#fffdf6'; rr(BX,BY,BW,hh,20); x.fill(); x.shadowBlur=0;

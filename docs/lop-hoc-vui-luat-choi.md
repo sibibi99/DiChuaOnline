@@ -107,3 +107,9 @@ Số liệu buổi live: tổng kết ~10 bình luận/tiết, ra chơi ~38, đ�
 - **Quà nổi bật hơn** (không xin quà, không nêu số xu, không thêm lời đọc): dải **BẢNG VÀNG** hiện tên người tặng lâu (quà nhỏ 25 giây, giấy khen 50 giây, bàn đầu 90 giây, Sổ vàng 3 phút), chen vào dải xếp hạng 2/3 thời gian khi còn người tặng; thẻ giấy khen / lớp trưởng / lễ tuyên dương **to hơn ~20% và hiện lâu hơn** (6,5 / 7,5 / 10 giây).
 - **Sao lưu mỗi ngày**: `data/lop-hoc-*.json` chép vào `data/backup-auto/<yyyymmdd>/` lúc khởi động và kiểm mỗi giờ, giữ 7 bản gần nhất.
 
+## 13. Cô pha trò + cảm ơn quà nhỏ (bản 1.6, 04/11)
+- **Kho câu đùa** `lib/lop-hoc/cau-dua.js`: 175 câu (≤ 15 từ), theo tình huống: nhiều bạn đúng (30), ít / không ai đúng — đùa nhẹ không chê (30), vào tiết mới (25), giờ ra chơi (20), cô tự trào (30), tim tăng nhanh (20), lớp đông lên (20). Hợp trẻ em, không chế giễu tên / ngoại hình / vùng miền / giới tính, không nhắc quà hay tiền, không chính trị / tôn giáo.
+- **Nhịp**: tối đa 1 câu đùa mỗi ~2,5–3 phút (`lopHoc.jokeSec`, mặc định 165 giây ±15%, đặt 0 để tắt). Câu đùa **gộp vào câu cô sắp đọc** (công bố đáp án, mở tiết, pháo hoa…) nên không thêm lượt đọc; riêng "tim tăng nhanh" / "lớp đông lên" chỉ đọc riêng khi hàng chờ giọng đang ngắn. Hiện luôn trong bong bóng chữ cạnh cô. Không lặp trong ngày (lưu `data/lop-hoc-used.json`, khoá `j`).
+- **Cảm ơn quà nhỏ**: quà nào cũng cảm ơn gọi tên; quà nhỏ dồn dập trong ~6 giây thì gộp ("Cảm ơn A, B và C đã tặng quà!"), không bỏ ai, không nêu số xu. Hoa trong tuần tri ân: "A, B và C tặng hoa cô giáo, cô xin nhận nhé!".
+- Công cụ: `node tools/test-cau-hoi.js` (có kiểm kho câu đùa), `node tools/test-cam-on.js`, `node tools/do-nhip-giong.js [lib] [giây] [tốc độ]` (đếm lượt đọc mỗi 10 phút, so hai bản).
+

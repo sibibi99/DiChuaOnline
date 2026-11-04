@@ -62,6 +62,16 @@ TRUYEN.forEach((t, i) => { if (!t[0] || !Array.isArray(t[1]) || t[1].length < 2 
   for (let i = 0; i < 40; i++) { const r = pick.call(mk(), bank, new Map(used), 'dv'); if (!['q0', 'q1'].includes(r[0])) { err('hết kho nhưng không ưu tiên câu cũ quá 7 ngày'); break; } }
   used = new Map(bank.map((r, i) => [r[0], now - 1000 * (10 - i)]));                         // tất cả mới hỏi: nhóm lâu nhất (q0..) được chọn, không lấy q5 (mới nhất)
   for (let i = 0; i < 40; i++) { const r = pick.call(mk(), bank, new Map(used), 'dv'); if (r[0] === 'q5') { err('lấy câu mới hỏi nhất khi hết kho'); break; } } }
+// ---- kho câu đùa của cô ----
+{ const { JOKES } = require('../lib/lop-hoc/cau-dua'), MIN_JOKES = +(process.env.MIN_JOKES || 150), SEEN = new Set(); let total = 0;
+  const NOJOKE = /quà|tiền|xu|nạp|ủng hộ|đảng|chính trị|phật|chúa|chùa|tôn giáo|miền|(?:^|\s)(?:xấu|béo|gầy|lùn|ngu|ngốc|dốt|đần)(?=\s|$|[,.!?])|điện thoại|zalo|link|inbox/i;
+  for (const [cat, list] of Object.entries(JOKES)) { total += list.length; if (list.length < 15) err(`JOKES.${cat}: quá ít (${list.length})`);
+    list.forEach((j, i) => { const tag = `JOKES.${cat}[${i}] "${j.slice(0, 40)}"`, words = j.trim().split(/\s+/).length;
+      if (words > 15) err(`${tag}: ${words} từ (> 15)`); if (words < 4) err(`${tag}: quá ngắn`);
+      if (NOJOKE.test(j) || BAD.test(j)) err(`${tag}: chữ không phù hợp (${(NOJOKE.exec(j) || BAD.exec(j) || [])[0]})`);
+      const k = norm(j); if (SEEN.has(k)) err(`${tag}: trùng câu`); SEEN.add(k); if (/'/.test(j)) err(`${tag}: dấu nháy đơn`); }); }
+  if (total < MIN_JOKES) err(`kho câu đùa chỉ có ${total} < ${MIN_JOKES}`);
+  console.log(`câu đùa: ${total} câu · ${Object.entries(JOKES).map(([c, l]) => c + ' ' + l.length).join(', ')}`); }
 console.log(`đố vui: ${DOVUI.length} câu · khó 1/2/3: ${perDiff[1]}/${perDiff[2]}/${perDiff[3]} · theo chủ đề: ${TOPICS.map(t => t + ' ' + (perTopic[t] || 0)).join(', ')}`);
 if (warns.length) console.log(`(${warns.length} cảnh báo: ${warns.slice(0, 5).map(w => w.slice(0, 70)).join(' ; ')}${warns.length > 5 ? ' …' : ''})`);
 console.log(`chính tả: ${CHINHTA.length} cặp · truyện: ${TRUYEN.length}`);
