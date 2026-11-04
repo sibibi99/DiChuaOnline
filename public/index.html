@@ -527,6 +527,20 @@ function drawInfo(t){
   if(mode===1) txt('quà tặng là ủng hộ kênh',X0+w/2,Y0+h-9,`600 10.5px ${SANS}`,'rgba(255,230,190,.75)');
   x.restore();
 }
+// ô "CÁCH TƯƠNG TÁC" cố định bên trái tượng (sếp 04/11: hướng dẫn cho khách dễ tương tác): 4 việc dễ làm nhất, hàng sáng chạy lần lượt để mắt dừng vào
+const GUIDE = [['nguoi','Gõ bất kỳ chữ','để vào chánh điện'],['the','Chat “rút thẻ”','nhận thẻ chúc lành'],['mo','Chat “gõ mõ”','cùng gõ mõ'],['tim','Thả tim','đủ mốc: mưa hoa sen']];
+function drawGuide(t){
+  const X0=10, Y0=380, w=180, RH=33, h=34+GUIDE.length*RH+6, hl=Math.floor(t/2600)%GUIDE.length, pu=.5+.5*Math.sin(t/500);
+  x.save();x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=14;x.fillStyle='rgba(30,8,3,.84)';rr(X0,Y0,w,h,12);x.fill();x.shadowBlur=0;
+  x.strokeStyle=lg(X0,Y0,X0+w,Y0+h,[[0,'#fff0b0'],[.5,'#c88a2a'],[1,'#fff0b0']]);x.lineWidth=1.6+.8*pu;rr(X0,Y0,w,h,12);x.stroke();
+  txt('CÁCH TƯƠNG TÁC',X0+w/2,Y0+22,fitFont('CÁCH TƯƠNG TÁC',w-20,14,SANS,'800'),GOLD(Y0+10,Y0+24),'center',null,{spacing:1});
+  GUIDE.forEach(([ic,a,b],k)=>{ const y=Y0+34+k*RH;
+    if(k===hl){ x.fillStyle=`rgba(255,214,120,${.14+.1*pu})`; rr(X0+5,y-1,w-10,RH-2,8); x.fill(); }
+    icon(ic,X0+22,y+14,18);
+    txt(a,X0+40,y+12,fitFont(a,w-48,13,SANS,'800'),k===hl?'#fff1b0':'#ffe7a3','left');
+    txt(b,X0+40,y+26,fitFont(b,w-48,11.5,SANS,'600'),'#f6e7cc','left'); });
+  x.restore();
+}
 // combo gõ mõ: nhiều người gõ liên tiếp thì số nhảy to dần
 function drawCombo(t){
   const c=S.combo, age=t-c.t; if(c.n<2||age>2600) return;
@@ -1000,6 +1014,7 @@ function frameRest(t,K,ca){
   drawGoal(t);
   drawStats(t);
   if(!S.que&&!bigBusy()&&!S.talkCap) drawInfo(t);   // đang giảng thì nhường chỗ cho khung chữ giữa màn hình
+  if(!S.que&&!bigBusy()) drawGuide(t);               // ô hướng dẫn bên trái luôn hiện (cả lúc đang giảng: khung giảng bắt đầu từ y≈553)
   drawCombo(t);
   drawSegText(t);
   drawTalk(t);
