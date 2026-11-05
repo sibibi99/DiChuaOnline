@@ -734,6 +734,17 @@ function stripBand(t){      // dải chữ rủ bạn bè, hiện vài giây ph�
   const a = Math.min(1, age / 400, (o.ms - age) / 500); x.save(); x.globalAlpha = a * .92; x.font = `700 15px ${SANS}`; const w = Math.min(690, x.measureText(o.text).width + 40), bx = CX - w / 2;
   x.fillStyle = 'rgba(74,47,24,.9)'; rr(bx,1204,w,26,13); x.fill(); x.strokeStyle = 'rgba(255,233,184,.6)'; x.lineWidth = 1.5; rr(bx,1204,w,26,13); x.stroke(); txt(o.text,CX,1222,`700 15px ${SANS}`,'#ffe9b8','center'); x.restore();
 }
+// dòng nổi bật mỗi lượt chia sẻ: "🎉 <tên> vừa rủ bạn vào lớp!" (hàng đợi, ~3,6 giây / dòng; đông thì rút ngắn) + thẻ đếm lượt rủ bạn hôm nay
+function shareBanner(t){
+  const q = S.shareQ || (S.shareQ = []);
+  if (!S.shareB && q.length) { S.shareB = { who: q.shift(), t0: t, dur: q.length >= 3 ? 1800 : q.length ? 2600 : 3600 }; }
+  const o = S.shareB; if (o) { const age = t - o.t0; if (age > o.dur) S.shareB = null; else {
+    const a = Math.min(1, age / 250, (o.dur - age) / 350), line = '🎉 ' + o.who + ' vừa rủ bạn vào lớp!', f = `800 21px ${SANS}`; x.save(); x.globalAlpha = a; x.font = f; const w = Math.min(680, x.measureText(line).width + 56), bx = CX - w / 2, by = 868 - 6 * (1 - ease(Math.min(1, age / 250)));
+    x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 10; x.shadowOffsetY = 3; x.fillStyle = lg(0, by, 0, by + 40, [[0, '#ffe27a'], [1, '#f2a93b']]); rr(bx, by, w, 40, 20); x.fill(); x.shadowColor = 'transparent';
+    x.strokeStyle = '#fff7d6'; x.lineWidth = 2.5; rr(bx + 2, by + 2, w - 4, 36, 18); x.stroke(); txt(line, CX, by + 28, fit(line, w - 40, 21, SANS, '800'), '#6b2e0a', 'center'); x.restore(); } }
+  if (S.shareDay > 0) { x.save(); x.fillStyle = 'rgba(90,50,20,.86)'; rr(10, 78, 112, 40, 12); x.fill(); x.strokeStyle = 'rgba(255,233,184,.7)'; x.lineWidth = 1.5; rr(10, 78, 112, 40, 12); x.stroke();
+    txt('Hôm nay đã có', 66, 94, `700 12px ${SANS}`, '#ffe9b8', 'center'); txt(fmt(S.shareDay) + ' lượt rủ bạn', 66, 111, `800 14px ${SANS}`, '#ffd23f', 'center'); x.restore(); }
+}
 function joinToast(t){
   const o = S.toast; if (!o) return; const age = t - o.t; if (age > 3200) { S.toast = null; return; }
   const a = Math.min(1, age / 200, (3200 - age) / 400); x.save(); x.globalAlpha = a; x.font = `800 14px ${SANS}`; const w = x.measureText(o.text).width + 28;
@@ -812,7 +823,7 @@ function hocBaCard(t){
 // ---------------- khung hình ----------------
 function frame(){
   const t = now(); x.setTransform(SC,0,0,SC,0,0);
-  drawBG(t); sceneFx(t); dragonDraw(t); title(t); board(t); teacherDesk(t); teacher(t); speech(t); hint(t); ranks(t); classroom(t); joinToast(t); fx(t); sceneBanner(t); big(t); hocBaCard(t); stripBand(t); bottomBar(t);
+  drawBG(t); sceneFx(t); dragonDraw(t); title(t); board(t); teacherDesk(t); teacher(t); speech(t); hint(t); ranks(t); classroom(t); joinToast(t); fx(t); sceneBanner(t); big(t); hocBaCard(t); shareBanner(t); stripBand(t); bottomBar(t);
   requestAnimationFrame(frame);
 }
 
@@ -912,7 +923,7 @@ function handle(m){
   const t = now();
   switch (m.t) {
     case 'ver': checkVer(m.ver); break;
-    case 'snapshot': checkVer(m.ver); setSeats(m.seats); Object.assign(S, { top: m.top || [], book: m.book || [], lt: m.lt || null, likes: m.likes || 0, goal: m.goal || S.goal, hoa: m.hoa || 0, tri: !!m.tri, sess: m.sess || [], ticker: m.ticker || '', recess: m.recess || S.recess, wait: m.wait || S.wait, teams: m.teams || S.teams });
+    case 'snapshot': checkVer(m.ver); setSeats(m.seats); Object.assign(S, { top: m.top || [], book: m.book || [], lt: m.lt || null, likes: m.likes || 0, goal: m.goal || S.goal, hoa: m.hoa || 0, shareDay: m.sd || 0, tri: !!m.tri, sess: m.sess || [], ticker: m.ticker || '', recess: m.recess || S.recess, wait: m.wait || S.wait, teams: m.teams || S.teams });
       if (m.vote) S.vote = { phase: 'open', ...m.vote, endAt: Date.now() + (m.vote.left || 0), total: m.vote.left || 15000 }; if (m.scene) setScene(m.scene.id, m.scene.name, false); if (m.gs) handle(m.gs);
       if (m.seg) setSeg(m.seg); setQ(m.q); break;
     case 'seats': setSeats(m.seats); break;
@@ -953,12 +964,12 @@ function handle(m){
     case 'hoi': S.bigQ.push({ k: 'hoi', sub: `${fmt(m.n)} tim · bạn đang có mặt được +5 điểm`, dur: 5200 }); act('khen', 5000); ting(); break;
     case 'lv': float(m.id, `Lên hạng: ${m.title}`, '#ffe27a', 16, -22); S.cheer.set(m.id, t + 2000); break;
     case 'qd': if (S.q && S.q.id === m.id) { S.q.n = m.n; S.q.dist = m.dist; } break;
-    case 'strip': S.strip = { text: m.text, t0: t, ms: m.ms || 9000 }; break;
+    case 'strip': S.strip = { text: m.text, t0: t, ms: m.ms || 9000 }; if (m.sd != null) S.shareDay = m.sd; break;
     case 'nudge': S.nudge.set(m.id, t + 6000); float(m.id, 'Cô gọi bạn!', '#ffd23f', 16); break;
     case 'me': float(m.id, `${m.points} điểm · ${m.title}`, '#fff', 15); break;
     case 'like': { S.likes = m.total || S.likes; if (m.goal) S.goal = m.goal; const p = at(m.id); for (let k = 0; k < Math.min(5, 1 + Math.floor(m.count / 3)); k++) S.hearts.push({ t: t + k * 120, x: p.x + (Math.random() - .5) * 16, y: p.y, s: 13 + Math.random() * 7, ph: Math.random() * 6 }); if (S.hearts.length > 60) S.hearts.splice(0, S.hearts.length - 60); break; }
     case 'goaldone': if (m.goal) S.goal = m.goal; S.bigQ.push({ k: 'goal', sub: `Cả lớp đã thả đủ ${fmt(m.target)} tim`, dur: 4200 }); act('khen', 4000); break;
-    case 'share': case 'follow': float(m.id, m.t === 'share' ? 'Rủ bạn vào lớp!' : 'Theo dõi lớp học!', '#7fd6ff', 15); if (m.t === 'follow') S.cheer.set(m.id, t + 1500); break;
+    case 'share': case 'follow': if (m.t === 'share') { if (m.day != null) S.shareDay = m.day; const q = S.shareQ || (S.shareQ = []); if (q.length < 6) q.push(m.who || 'Một bạn'); } float(m.id, m.t === 'share' ? 'Rủ bạn vào lớp!' : 'Theo dõi lớp học!', '#7fd6ff', 15); if (m.t === 'follow') S.cheer.set(m.id, t + 1500); break;
     case 'gift': {
       S.donors = S.donors.filter(d => d.id !== m.id); S.donors.unshift({ id: m.id, name: m.name, avatar: m.avatar, tier: m.tier, until: Date.now() + ({ nho: 25, vua: 50, lon: 90, ratlon: 180 }[m.tier] || 25) * 1000 }); if (S.donors.length > 8) S.donors.pop();
       S.hoa = m.hoa ?? S.hoa; const p = at(m.id); act('camon', 3600); S.cheer.set(m.id, t + 3000);

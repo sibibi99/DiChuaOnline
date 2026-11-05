@@ -170,3 +170,11 @@ Trước tiết **Đố vui** và tiết **Kiểm tra 15 phút** (khi có ít nh
 - **≥ 100 bạn**: về nhịp cũ (dải 180 giây, giọng 1 lần / 5 phút, không có câu mục tiêu).
 - Luật chữ không đổi: không quà / điểm / xu / link / SĐT, không hứa lợi ích. Chỉ sửa phía server (`room.js`), cần khởi động lại server mới có.
 - Test: `node tools/test-so-chon.js`.
+
+## 23. Kêu gọi chia sẻ (bản 2.2) — thay số của mục 22
+- **Nhịp mới (knob trong `lopHoc`)**: dải chữ rủ bạn `shareStripLowSec` = 45 s (lớp < 100 bạn) / `shareStripSec` = 90 s (≥ 100); giọng rủ bạn trong vòng lấp chỗ trống `shareVoiceLowSec` = 120 s / `shareVoiceSec` = 240 s.
+- **Cảm ơn người chia sẻ gọi tên**: mỗi lượt share hiện ngay dòng nổi bật "🎉 <tên> vừa rủ bạn vào lớp!" trên màn hình (hàng đợi, đông thì rút ngắn). Tên mặc định / tên thô lọc như BADNAME → hiện "Một bạn" nhưng vẫn tính lượt. Giọng cô cảm ơn gọi tên, gộp tối đa 3 tên ("A, B, C và các bạn khác"), **≤ 1 câu / `shareThanksSec` = 60 s**, tách khỏi cảm ơn theo dõi (180 s, không còn gộp "chia sẻ").
+- **Bộ đếm**: thẻ "Hôm nay đã có N lượt rủ bạn" (góc trái dưới ô tim, hiện khi N ≥ 1) — `shareDay` lưu theo ngày trong `data/lop-hoc-<nền tảng>.json`, qua khởi động lại, sang ngày mới về 0; vẫn giữ câu mục tiêu 100 bạn khi lớp < 100.
+- **Đuôi rủ bạn** (≤ 8 từ, 6 câu xoay vòng, `SHARE_TAIL`) ghép vào câu mở tiết Điểm danh và câu cuối của Tổng kết — không thêm lượt đọc; `lopHoc.shareTail:false` để tắt.
+- Chia sẻ không cộng điểm / huy hiệu / quà mới (điểm 2 của `onShare` có từ trước, không công bố). Không gắn chia sẻ với phần thưởng ở bất kỳ chữ nào (hình, giọng).
+- Test: `node tools/test-chia-se.js`. Giao diện: `shareBanner()` trong `lop-hoc.html` (tin `share` có `who`, `day`; `strip` / `snapshot` có `sd`).

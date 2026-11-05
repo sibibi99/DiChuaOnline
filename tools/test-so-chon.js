@@ -44,11 +44,11 @@ const U = i => ({ id: 'u' + i, name: 'Bạn' + String.fromCharCode(65 + (i % 26)
   ok(SHARE.length >= 6, 'cần ≥ 6 câu rủ bạn'); for (const t of SHARE) { ok(words(t) <= 12, 'câu rủ bạn dài: ' + t); ok(!BADS.test(t), 'câu rủ bạn có chữ cấm: ' + t); ok(!/'/.test(t), 'dấu nháy'); }
   // giọng: lớp < 100 bạn tối đa 1 lần / 3 phút, đủ 100 bạn 1 lần / 5 phút, trong vòng lấp chỗ trống
   const ALL = SHARE.concat(GOAL_VOICE), cnt = (r) => { let c = 0; for (let i = 0; i < 400; i++) if (ALL.includes(r.fillText())) c++; return c; };
-  const f = mk('fill', {}); ok(cnt(f) === 1, 'lớp < 100: giọng rủ bạn phải ≤ 1 lần / 3 phút');
-  f.shareVoiceAt = Date.now() - 170000; ok(cnt(f) === 0, 'lớp < 100: chưa đủ 3 phút thì không rủ lại');
-  f.shareVoiceAt = Date.now() - 181000; let c2 = 0; for (let i = 0; i < 400 && !c2; i++) { if (ALL.includes(f.fillText())) c2++; } ok(c2 === 1, 'lớp < 100: sau 3 phút giọng rủ bạn phải có lại');
-  const h = mk('fillhi', {}); h.viewers = 150; ok(cnt(h) === 1 && !GOAL_VOICE.some(g => { h.shareVoiceAt = 0; for (let i = 0; i < 400; i++) if (h.fillText() === g) return true; return false; }), 'lớp ≥ 100: giọng rủ ≤ 1 lần / 5 phút và không dùng câu mục tiêu');
-  h.shareVoiceAt = Date.now() - 200000; ok(cnt(h) === 0, 'lớp ≥ 100: 3 phút chưa đủ');
-  h.shareVoiceAt = Date.now() - 301000; let c3 = 0; for (let i = 0; i < 400 && !c3; i++) { if (SHARE.includes(h.fillText())) c3++; } ok(c3 === 1, 'lớp ≥ 100: sau 5 phút giọng rủ bạn phải có lại');
-  console.log(errs.length ? 'LỖI:\n - ' + errs.join('\n - ') : 'OK: số người chọn từng đáp án (gom 400ms, đúng phiếu đầu, qend, câu số không có), dải chia sẻ xoay vòng, giọng rủ bạn ≤ 1 lần / 5 phút, không quà / điểm / link'); process.exit(errs.length ? 1 : 0);
+  const f = mk('fill', {}); ok(cnt(f) === 1, 'lớp < 100: giọng rủ bạn phải ≤ 1 lần / 2 phút');
+  f.shareVoiceAt = Date.now() - 110000; ok(cnt(f) === 0, 'lớp < 100: chưa đủ 2 phút thì không rủ lại');
+  f.shareVoiceAt = Date.now() - 121000; let c2 = 0; for (let i = 0; i < 400 && !c2; i++) { if (ALL.includes(f.fillText())) c2++; } ok(c2 === 1, 'lớp < 100: sau 2 phút giọng rủ bạn phải có lại');
+  const h = mk('fillhi', {}); h.viewers = 150; ok(cnt(h) === 1 && !GOAL_VOICE.some(g => { h.shareVoiceAt = 0; for (let i = 0; i < 400; i++) if (h.fillText() === g) return true; return false; }), 'lớp ≥ 100: giọng rủ ≤ 1 lần / 4 phút và không dùng câu mục tiêu');
+  h.shareVoiceAt = Date.now() - 200000; ok(cnt(h) === 0, 'lớp ≥ 100: 3 phút 20 giây chưa đủ');
+  h.shareVoiceAt = Date.now() - 241000; let c3 = 0; for (let i = 0; i < 400 && !c3; i++) { if (SHARE.includes(h.fillText())) c3++; } ok(c3 === 1, 'lớp ≥ 100: sau 4 phút giọng rủ bạn phải có lại');
+  console.log(errs.length ? 'LỖI:\n - ' + errs.join('\n - ') : 'OK: số người chọn từng đáp án (gom 400ms, đúng phiếu đầu, qend, câu số không có), dải chia sẻ xoay vòng, giọng rủ bạn ≤ 1 lần / 2 phút (< 100 bạn) hoặc 4 phút, không quà / điểm / link'); process.exit(errs.length ? 1 : 0);
 })();
