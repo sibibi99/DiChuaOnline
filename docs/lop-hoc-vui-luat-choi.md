@@ -151,3 +151,9 @@ Trước tiết **Đố vui** và tiết **Kiểm tra 15 phút** (khi có ít nh
 - **Lấp chỗ trống** (khi cô im quá `idleSec`, lớp đông thì `idleBusySec`): xoay vòng, **không lặp liền kề**, giữa 4 loại: **câu đùa** (`cau-dua.js`) · **mẹo học nhanh** (`meo-hoc.js`, 42 mẹo ≤ 15 từ theo khối lớp 1–2 / 3–5 / 6–9, chọn theo khối đang chọn hoặc khối tự đoán, không lặp 24 mẹo gần nhất) · **hỏi nhanh** 1 câu dễ (7 giây sau đọc đáp án) · **gọi tên bạn đứng đầu bảng điểm hôm nay** (điểm trong ngày `dp/dpd`, từ 6 điểm, tên sạch, không gọi lặp một bạn liên tiếp). Loại nào chưa có nội dung thì chuyển loại khác; hết cả thì nhắc gõ "có mặt".
 - Mẹo không nhắc tiền / quà, không hứa kết quả. Nhịp giọng đo bằng `tools/do-nhip-giong.js` không cao hơn bản 1.8.
 - Test: `node tools/test-chao.js` (bong bóng, chào gộp, mẹo ≤ 15 từ theo khối, bạn đứng đầu, xoay vòng).
+
+## 20. Số người chọn từng đáp án + dải rủ bạn bè (bản 2.0, 05/11)
+- **Số người chọn** (đố vui, kiểm tra, đố nhanh giờ ra chơi — câu A/B/C/D): mỗi ô đáp án hiện **số bạn đã chọn** và thanh màu nhỏ theo tỉ lệ, nhảy trực tiếp (máy chủ gom và gửi tin `qd` mỗi ~400 ms, chỉ khi có thay đổi). Mỗi người 1 phiếu theo luật chấm hiện có (**đáp án đầu tiên được tính**). Công bố đáp án: ô đúng sáng lên, dấu ✓ và số bạn chọn đúng (`qend.dist`). Câu toán nhẩm / chính tả (đáp số) chỉ hiện "N bạn đã trả lời". Không thêm lượt đọc giọng. Người vào giữa chừng thấy ngay số phiếu (`qView().dist`).
+- **Dải chữ rủ bạn bè** (`SHARE` trong `meo-hoc.js`, 6 câu): mỗi `lopHoc.shareStripSec` = 180 giây hiện 9 giây phía trên thanh dưới (tin `strip`), chỉ là chữ. Giọng cô chỉ nhắc trong vòng lấp chỗ trống, **tối đa 1 lần / 5 phút**. Luật: không gắn quà / điểm / xu, không link / SĐT / Zalo, không hứa lợi ích. Có người chia sẻ vẫn cảm ơn gộp như cũ.
+- Sửa kèm: `public/lop-hoc.html` bản trước **chưa có** giao diện bình chọn khối lớp 1.8 (còn nhãn "Dễ/Vừa/Khó"); bản này chép đủ từ `lop-hoc-moi.html`.
+- Test: `node tools/test-so-chon.js`.
