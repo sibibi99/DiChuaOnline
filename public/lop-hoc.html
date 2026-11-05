@@ -826,11 +826,11 @@ function audioInit(){
   sfx = AC.createGain(); sfx.gain.value = .55; sfx.connect(master);
   bgGain = AC.createGain(); bgGain.gain.value = .45; bgGain.connect(master);
   voiceGain = AC.createGain(); voiceGain.gain.value = 1.4; voiceGain.connect(master);
-  musBus = AC.createGain(); musBus.gain.value = 1; musBus.connect(bgGain);
+  musBus = AC.createGain(); musBus.gain.value = .8; musBus.connect(bgGain);
   const mode = Q.get('music');
   if (mode === 'off') {}
   else if (mode === 'synth') startSynth();
-  else fetch('/music').then(r=>r.json()).then(l=> l.length ? playFiles(l) : (mode === 'synth2' && startSynth())).catch(()=>{});   // không có tệp nhạc → im (bỏ nhạc ngũ cung nghe như nhạc chùa)
+  else fetch('/music').then(r=>r.json()).then(l=> l.length ? playFiles(l) : startSynth()).catch(()=>startSynth());   // có tệp trong music/ thì phát tệp; không có → nhạc học đường tự sinh (mặc định BẬT, ?music=off để tắt)
   if (AC.state === 'suspended' && !/[?&]shot/.test(location.search)) document.getElementById('tap').style.display = 'flex';
 }
 function playFiles(list){
@@ -842,16 +842,47 @@ function playFiles(list){
 const mtof = m => 440*Math.pow(2,(m-69)/12);
 function tone(w, f, type, a, peak, d, dest){ const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.value = f;
   g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(peak, w + a); g.gain.exponentialRampToValueAtTime(.0001, w + a + d); o.connect(g); g.connect(dest || musBus); o.start(w); o.stop(w + a + d + .05); }
-// nhạc nền nhẹ nhàng giờ ra chơi: hợp âm C–Am–F–G + giai điệu ngũ cung kiểu marimba, 92 nhịp / phút
-const PROG = [[48,55,60,64],[45,52,57,60],[41,48,53,57],[43,50,55,59]], PENTA = [72,74,76,79,81,84];
-let step = 0, nextT = 0;
+// nhạc nền HỌC ĐƯỜNG tự sinh (WebAudio, không bản quyền): giọng Đô trưởng, ~120 nhịp, mộc cầm + xylophone + bass nhún + trống nhẹ.
+// Vòng hợp âm A = I–V–vi–IV (C G Am F), B = I–IV–V–I (C F G C); mỗi đoạn 4 ô nhịp, chọn ngẫu nhiên giai điệu (không lặp liền nhau).
+// Giờ ra chơi (rachoi) nhanh + rộn hơn; tiết kể chuyện (ke) chậm, không trống; còn lại nhịp thường.
+const HC = {
+  A: { bass: [[48,55],[43,50],[45,52],[41,48]], chord: [[60,64,67],[59,62,67],[57,60,64],[57,60,65]],
+    mel: [
+      [76,0,79,76,74,76,72,0, 74,0,79,74,71,74,79,0, 72,0,76,72,69,72,76,0, 77,0,76,74,72,0,0,0],
+      [76,76,0,79,0,81,79,76, 74,74,0,79,77,76,74,0, 72,0,76,0,81,0,79,76, 77,0,81,0,79,77,76,0],
+      [79,0,76,0,79,81,79,0, 79,0,74,0,71,74,79,0, 76,0,72,0,69,72,76,81, 79,77,76,74,72,0,0,0] ] },
+  B: { bass: [[48,55],[41,48],[43,50],[48,55]], chord: [[60,64,67],[57,60,65],[59,62,67],[60,64,67]],
+    mel: [
+      [72,74,76,0,79,0,76,0, 77,0,76,77,81,0,77,0, 79,0,77,74,71,74,77,0, 76,0,74,72,72,0,0,0],
+      [79,0,79,76,0,76,72,0, 81,0,77,0,81,0,84,0, 83,0,79,0,74,0,79,0, 84,0,79,76,72,0,0,0],
+      [76,0,0,79,76,0,72,0, 77,0,0,81,77,0,72,0, 74,0,0,79,74,0,71,0, 72,76,79,76,72,0,0,0] ] },
+};
+let step = 0, nextT = 0, synthOn = false, phr = null, cur = null, oct = 0, lastMel = [-1, -1], noiseBuf = null;
+function noiseHit(w, type, f, peak, d, dest){ if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const ch = noiseBuf.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random()*2-1; }
+  const s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = noiseBuf; fl.type = type; fl.frequency.value = f;
+  g.gain.setValueAtTime(peak, w); g.gain.exponentialRampToValueAtTime(.0001, w + d); s.connect(fl); fl.connect(g); g.connect(dest || musBus); s.start(w, Math.random()*.5); s.stop(w + d + .02); }
+function kick(w, peak){ const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(130, w); o.frequency.exponentialRampToValueAtTime(48, w + .11);
+  g.gain.setValueAtTime(peak, w); g.gain.exponentialRampToValueAtTime(.0001, w + .2); o.connect(g); g.connect(musBus); o.start(w); o.stop(w + .22); }
+function xylo(w, m, peak, d){ const f = mtof(m); tone(w, f, 'triangle', .002, peak, d || .3); tone(w, f*3, 'sine', .002, peak*.35, .1); }     // gõ thanh gỗ: attack rõ, đuôi ngắn
+function pluck(w, m, peak){ tone(w, mtof(m), 'triangle', .003, peak, .28); }                                                                   // gảy mộc cầm
 function startSynth(){
-  nextT = AC.currentTime + .2;
+  if (synthOn) return; synthOn = true; nextT = AC.currentTime + .2;
   setInterval(() => { if (!AC || AC.state !== 'running') { nextT = Math.max(nextT, AC ? AC.currentTime : 0); return; }
-    while (nextT < AC.currentTime + .3) { const beat = 60/92/2, bar = Math.floor(step/8) % 4, k = step % 8, ch = PROG[bar];
-      if (k === 0) ch.slice(0,3).forEach(m => tone(nextT, mtof(m), 'triangle', .02, .06, 1.6));
-      if (k % 2 === 0) tone(nextT, mtof(ch[(k/2) % 4] + 12), 'sine', .005, .09, .5);
-      if (Math.random() < .55) tone(nextT, mtof(PENTA[Math.floor(Math.random()*PENTA.length)]), 'sine', .004, .07, .7);
+    const key = S && S.seg && S.seg.key, play = key === 'rachoi', calm = key === 'ke', bpm = play ? 130 : calm ? 104 : 120;
+    while (nextT < AC.currentTime + .3) { const beat = 60/bpm/2, pos = step % 32, bar = Math.floor(pos/8), k = pos % 8, w = nextT;
+      if (pos === 0) { phr = Math.random() < .5 ? HC.A : HC.B;   // đoạn mới: chọn vòng hợp âm + giai điệu, không lặp lại giai điệu vừa chơi
+        let mi; do { mi = Math.floor(Math.random()*phr.mel.length); } while (mi === lastMel[phr === HC.A ? 0 : 1] && phr.mel.length > 1); lastMel[phr === HC.A ? 0 : 1] = mi; cur = phr.mel[mi]; oct = Math.random() < .25 && !calm ? 12 : 0; }
+      const g = calm ? .6 : play ? 1.15 : 1, bs = phr.bass[bar], ch = phr.chord[bar];
+      // bass nhún: gốc – quãng 5 – gốc – quãng 5
+      if (k === 0 || k === 4) tone(w, mtof(bs[0]), 'triangle', .008, .11*g, .32); else if (k === 3 || k === 7 || (play && k === 6)) tone(w, mtof(bs[1]), 'triangle', .008, .08*g, .22);
+      // mộc cầm gảy: nhấn lệch phách 2 và 4
+      if (k === 0) ch.forEach((m, i) => pluck(w + i*.012, m, .018*g)); else if (k === 2 || k === 6) ch.forEach((m, i) => pluck(w + i*.012, m, .04*g));
+      // giai điệu xylophone (thỉnh thoảng bỏ một nốt cho đỡ đều, nhưng không bỏ nốt đầu ô nhịp)
+      const n = cur[pos]; if (n && (k === 0 || Math.random() > .08)) xylo(w, n + (oct && bar >= 2 ? oct : 0), .085*g, calm ? .45 : .3);
+      // trống nhẹ: bass drum phách 1–3, vỗ tay phách 2–4, hi-hat đều (ra chơi thêm kick đảo); tiết kể chuyện không trống
+      if (!calm) { if (k === 0 || k === 4 || (play && k === 7 && bar % 2)) kick(w, k === 7 ? .1 : .2*g);
+        if (k === 2 || k === 6) noiseHit(w, 'bandpass', 1800, .05*g, .12);
+        noiseHit(w, 'highpass', 7500, k % 2 ? .035*g : .02*g, k % 2 ? .06 : .035); }
       nextT += beat; step++; } }, 40);
 }
 function bell(){ if (!AC || !sfxOk('bell', 5000)) return; const w = AC.currentTime + .02; for (let i = 0; i < 7; i++) { [1180,1560].forEach(f => tone(w + i*.11, f, 'sine', .002, .12, .25, sfx)); } }

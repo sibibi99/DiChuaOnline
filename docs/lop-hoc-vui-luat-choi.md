@@ -157,3 +157,9 @@ Trước tiết **Đố vui** và tiết **Kiểm tra 15 phút** (khi có ít nh
 - **Dải chữ rủ bạn bè** (`SHARE` trong `meo-hoc.js`, 6 câu): mỗi `lopHoc.shareStripSec` = 180 giây hiện 9 giây phía trên thanh dưới (tin `strip`), chỉ là chữ. Giọng cô chỉ nhắc trong vòng lấp chỗ trống, **tối đa 1 lần / 5 phút**. Luật: không gắn quà / điểm / xu, không link / SĐT / Zalo, không hứa lợi ích. Có người chia sẻ vẫn cảm ơn gộp như cũ.
 - Sửa kèm: `public/lop-hoc.html` bản trước **chưa có** giao diện bình chọn khối lớp 1.8 (còn nhãn "Dễ/Vừa/Khó"); bản này chép đủ từ `lop-hoc-moi.html`.
 - Test: `node tools/test-so-chon.js`.
+
+## 21. Nhạc nền học đường (bản 2.1)
+- Client tự sinh bằng WebAudio, **mặc định BẬT** khi thư mục `music/` trống; `?music=off` tắt; có tệp trong `music/` thì phát tệp. Nhạc ngũ cung cũ (giống nhạc chùa) đã bỏ.
+- Giọng Đô trưởng, ~120 nhịp: xylophone (triangle ngắn) + mộc cầm gảy lệch phách + bass nhún gốc–quãng 5 + trống nhẹ (kick, vỗ, hi-hat bằng noise). Hai vòng hợp âm I–V–vi–IV và I–IV–V–I, mỗi vòng 3 giai điệu, 4 ô nhịp một đoạn, chọn ngẫu nhiên, không lặp liền.
+- Giờ ra chơi (`rachoi`) 130 nhịp, to hơn chút; tiết kể chuyện (`ke`) 104 nhịp, nhỏ, không trống. Cô nói thì nhạc tự hạ (duck có sẵn).
+- Test: `node tools/test-nhac.js` (bộ lập lịch với AudioContext giả).
