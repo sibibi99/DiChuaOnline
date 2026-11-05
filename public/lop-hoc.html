@@ -745,6 +745,12 @@ function shareBanner(t){
   if (S.shareDay > 0) { x.save(); x.fillStyle = 'rgba(90,50,20,.86)'; rr(10, 78, 112, 40, 12); x.fill(); x.strokeStyle = 'rgba(255,233,184,.7)'; x.lineWidth = 1.5; rr(10, 78, 112, 40, 12); x.stroke();
     txt('Hôm nay đã có', 66, 94, `700 12px ${SANS}`, '#ffe9b8', 'center'); txt(fmt(S.shareDay) + ' lượt rủ bạn', 66, 111, `800 14px ${SANS}`, '#ffd23f', 'center'); x.restore(); }
 }
+function noticeBand(t){      // thông báo sếp nhập ở bảng điều khiển: chỉ hiện chữ, 1 dòng phía trên thanh dưới
+  const o = S.notice; if (!o) return; const age = t - o.t0; if (age > o.ms) { S.notice = null; return; }
+  const a = Math.min(1, age / 400, (o.ms - age) / 500), f = fit(o.text, 640, 21, SANS, '800'); x.save(); x.globalAlpha = a; x.font = f; const w = Math.min(700, x.measureText(o.text).width + 48), bx = CX - w / 2;
+  x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 10; x.shadowOffsetY = 3; x.fillStyle = 'rgba(255,253,240,.96)'; rr(bx, 1156, w, 40, 20); x.fill(); x.shadowColor = 'transparent';
+  x.strokeStyle = '#d6343b'; x.lineWidth = 2.5; rr(bx + 2, 1158, w - 4, 36, 18); x.stroke(); txt(o.text, CX, 1184, f, '#6b2e0a', 'center'); x.restore();
+}
 function joinToast(t){
   const o = S.toast; if (!o) return; const age = t - o.t; if (age > 3200) { S.toast = null; return; }
   const a = Math.min(1, age / 200, (3200 - age) / 400); x.save(); x.globalAlpha = a; x.font = `800 14px ${SANS}`; const w = x.measureText(o.text).width + 28;
@@ -823,20 +829,23 @@ function hocBaCard(t){
 // ---------------- khung hình ----------------
 function frame(){
   const t = now(); x.setTransform(SC,0,0,SC,0,0);
-  drawBG(t); sceneFx(t); dragonDraw(t); title(t); board(t); teacherDesk(t); teacher(t); speech(t); hint(t); ranks(t); classroom(t); joinToast(t); fx(t); sceneBanner(t); big(t); hocBaCard(t); shareBanner(t); stripBand(t); bottomBar(t);
+  drawBG(t); sceneFx(t); dragonDraw(t); title(t); board(t); teacherDesk(t); teacher(t); speech(t); hint(t); ranks(t); classroom(t); joinToast(t); fx(t); sceneBanner(t); big(t); hocBaCard(t); shareBanner(t); noticeBand(t); stripBand(t); bottomBar(t);
   requestAnimationFrame(frame);
 }
 
 // ---------------- âm thanh: nhạc nền tự tạo (không bản quyền) hoặc nhạc trong thư mục music/ ----------------
-let AC, master, bgGain, voiceGain, musBus, BGM, sfx;
+let AC, master, bgGain, voiceGain, musBus, BGM, sfx, curVoice = null, ducked = false;
+const AUD = { on: true, mv: 60, vv: 100 };      // bảng điều khiển /dieu-khien: nhạc bật / tắt, âm lượng nhạc (60 = như cũ), âm lượng giọng cô
+const bgBase = () => AUD.on ? .45 * AUD.mv / 60 : 0;
+function applyAudio(){ if (!AC) return; const t = AC.currentTime; bgGain.gain.cancelScheduledValues(t); bgGain.gain.setValueAtTime(bgGain.gain.value, t); bgGain.gain.linearRampToValueAtTime(ducked ? bgBase() * .31 : bgBase(), t + .3); voiceGain.gain.cancelScheduledValues(t); voiceGain.gain.setValueAtTime(voiceGain.gain.value, t); voiceGain.gain.linearRampToValueAtTime(1.4 * AUD.vv / 100, t + .2); }
 const SFXT = {}; const sfxOk = (k, ms) => { const t = performance.now(); if (t - (SFXT[k] || 0) < ms) return false; SFXT[k] = t; return true; };   // hiệu ứng âm thanh giãn cách: lớp đông không bị bíp / chuông liên tục đè lên giọng cô
 function audioInit(){
   if (AC) return; AC = new (window.AudioContext||window.webkitAudioContext)();
   master = AC.createGain(); master.gain.value = .85;
   const lim = AC.createDynamicsCompressor(); lim.threshold.value = -14; lim.knee.value = 10; lim.ratio.value = 14; lim.attack.value = .003; lim.release.value = .2; master.connect(lim); lim.connect(AC.destination);      // bộ giới hạn: giọng + hiệu ứng cùng lúc không bị vỡ tiếng
   sfx = AC.createGain(); sfx.gain.value = .55; sfx.connect(master);
-  bgGain = AC.createGain(); bgGain.gain.value = .45; bgGain.connect(master);
-  voiceGain = AC.createGain(); voiceGain.gain.value = 1.4; voiceGain.connect(master);
+  bgGain = AC.createGain(); bgGain.gain.value = bgBase(); bgGain.connect(master);
+  voiceGain = AC.createGain(); voiceGain.gain.value = 1.4 * AUD.vv / 100; voiceGain.connect(master);
   musBus = AC.createGain(); musBus.gain.value = .8; musBus.connect(bgGain);
   const mode = Q.get('music');
   if (mode === 'off') {}
@@ -899,14 +908,14 @@ function startSynth(){
 function bell(){ if (!AC || !sfxOk('bell', 5000)) return; const w = AC.currentTime + .02; for (let i = 0; i < 7; i++) { [1180,1560].forEach(f => tone(w + i*.11, f, 'sine', .002, .12, .25, sfx)); } }
 function ting(){ if (!AC || !sfxOk('ting', 1200)) return; const w = AC.currentTime + .01; [1320,1760,2093].forEach((f,i) => tone(w + i*.07, f, 'sine', .002, .12, .45, sfx)); }
 function pop(){ if (!AC || !sfxOk('pop', 2500)) return; tone(AC.currentTime + .01, 520, 'triangle', .002, .08, .12, sfx); }
-function duck(on){ if(!AC) return; bgGain.gain.cancelScheduledValues(AC.currentTime); bgGain.gain.linearRampToValueAtTime(on?.14:.45, AC.currentTime+.3); sfx.gain.cancelScheduledValues(AC.currentTime); sfx.gain.linearRampToValueAtTime(on?.2:.55, AC.currentTime+.15); }   // cô đang nói: hiệu ứng nhỏ lại
+function duck(on){ if(!AC) return; ducked = on; bgGain.gain.cancelScheduledValues(AC.currentTime); bgGain.gain.linearRampToValueAtTime(on ? bgBase() * .31 : bgBase(), AC.currentTime+.3); sfx.gain.cancelScheduledValues(AC.currentTime); sfx.gain.linearRampToValueAtTime(on?.2:.55, AC.currentTime+.15); }   // cô đang nói: hiệu ứng nhỏ lại
 async function speak(m){
   const ack = () => { if (S.say && S.say.id === m.id) S.say.end = now(); ws && ws.readyState===1 && ws.send(JSON.stringify({t:'spoken',id:m.id})); };
   S.say = { id: m.id, text: m.text, t: now(), end: 0, k: m.meta && m.meta.k, title: m.meta && m.meta.title };
   if (m.kind === 'gift' && /^Cảm ơn/.test(m.text)) act('camon', 3600); else if (/Nhanh nhất là|tung mũ|Tung mũ|nhảy dây thôi/.test(m.text)) act('khen', 3200); else if (/Cô thưởng|Hạng nhất|Đáp án là/.test(m.text)) act('khen', 2200);
   if (!m.url || !AC) { setTimeout(ack, 1200 + m.text.length*55); return; }
   try { const ab = await AC.decodeAudioData(await (await fetch(m.url)).arrayBuffer());
-    const src = AC.createBufferSource(); src.buffer = ab; src.connect(voiceGain); duck(true); src.onended = () => { duck(false); ack(); }; src.start();
+    const src = AC.createBufferSource(); src.buffer = ab; src.connect(voiceGain); duck(true); curVoice = src; src.onended = () => { if (curVoice === src) curVoice = null; duck(false); ack(); }; src.start();
   } catch (e) { console.warn('voice', e); ack(); }
 }
 
@@ -923,7 +932,7 @@ function handle(m){
   const t = now();
   switch (m.t) {
     case 'ver': checkVer(m.ver); break;
-    case 'snapshot': checkVer(m.ver); setSeats(m.seats); Object.assign(S, { top: m.top || [], book: m.book || [], lt: m.lt || null, likes: m.likes || 0, goal: m.goal || S.goal, hoa: m.hoa || 0, shareDay: m.sd || 0, tri: !!m.tri, sess: m.sess || [], ticker: m.ticker || '', recess: m.recess || S.recess, wait: m.wait || S.wait, teams: m.teams || S.teams });
+    case 'snapshot': checkVer(m.ver); if (m.audio) { AUD.on = m.audio.on !== false; AUD.mv = m.audio.mv ?? 60; AUD.vv = m.audio.vv ?? 100; applyAudio(); } S.notice = m.notice && m.notice.text ? { text: m.notice.text, t0: t, ms: m.notice.ms } : null; setSeats(m.seats); Object.assign(S, { top: m.top || [], book: m.book || [], lt: m.lt || null, likes: m.likes || 0, goal: m.goal || S.goal, hoa: m.hoa || 0, shareDay: m.sd || 0, tri: !!m.tri, sess: m.sess || [], ticker: m.ticker || '', recess: m.recess || S.recess, wait: m.wait || S.wait, teams: m.teams || S.teams });
       if (m.vote) S.vote = { phase: 'open', ...m.vote, endAt: Date.now() + (m.vote.left || 0), total: m.vote.left || 15000 }; if (m.scene) setScene(m.scene.id, m.scene.name, false); if (m.gs) handle(m.gs);
       if (m.seg) setSeg(m.seg); setQ(m.q); break;
     case 'seats': setSeats(m.seats); break;
@@ -964,6 +973,9 @@ function handle(m){
     case 'hoi': S.bigQ.push({ k: 'hoi', sub: `${fmt(m.n)} tim · bạn đang có mặt được +5 điểm`, dur: 5200 }); act('khen', 5000); ting(); break;
     case 'lv': float(m.id, `Lên hạng: ${m.title}`, '#ffe27a', 16, -22); S.cheer.set(m.id, t + 2000); break;
     case 'qd': if (S.q && S.q.id === m.id) { S.q.n = m.n; S.q.dist = m.dist; } break;
+    case 'audio': AUD.on = m.on !== false; AUD.mv = m.mv ?? 60; AUD.vv = m.vv ?? 100; applyAudio(); break;
+    case 'hush': try { curVoice && curVoice.stop(); } catch (e) {} break;      // bảng điều khiển: TẠM IM CÔ / xoá hàng chờ → ngắt câu đang đọc
+    case 'notice': S.notice = m.text ? { text: m.text, t0: t, ms: m.ms || 20000 } : null; break;
     case 'strip': S.strip = { text: m.text, t0: t, ms: m.ms || 9000 }; if (m.sd != null) S.shareDay = m.sd; break;
     case 'nudge': S.nudge.set(m.id, t + 6000); float(m.id, 'Cô gọi bạn!', '#ffd23f', 16); break;
     case 'me': float(m.id, `${m.points} điểm · ${m.title}`, '#fff', 15); break;

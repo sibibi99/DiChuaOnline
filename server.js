@@ -15,6 +15,10 @@ const GAME = process.env.GAME || cfg.game || 'chua';
 const { Room } = require(GAME === 'lop-hoc' ? './lib/lop-hoc/room' : './lib/room');
 // Lớp Học Vui: giọng cô giáo riêng (mặc định Mai Anh, nữ miền Bắc của Voice Lab); đổi bằng config.lopHoc.voice
 if (GAME === 'lop-hoc' && cfg.voice.voicelab) cfg.voice.voicelab = { ...cfg.voice.voicelab, voice: cfg.lopHoc?.voice || 'vi-mai-anh', fallbackVbee: false };      // CHỈ MỘT giọng cô giáo: Voice Lab tắt thì im, không đọc dự phòng bằng giọng nam Vbee
+// 60 dòng nhật ký gần nhất (bảng điều khiển hiện 10 dòng cuối)
+const LOGS = []; { const ol = console.log.bind(console); console.log = (...a) => { try { LOGS.push(new Date().toLocaleTimeString('vi-VN') + ' ' + a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' ').slice(0, 300)); if (LOGS.length > 60) LOGS.shift(); } catch {} ol(...a); }; }
+// bảng điều khiển Lớp Học Vui: ghi đè config.lopHoc bằng data/dieu-khien.json TRƯỚC khi tạo phòng
+let DK_BASE = null; if (GAME === 'lop-hoc') DK_BASE = require('./lib/lop-hoc/dieu-khien').applyStartup(cfg);
 console.log('Cấu hình:', cfgFile, '| game:', GAME);
 
 const engine = new VoiceEngine(cfg.voice);
@@ -32,10 +36,13 @@ for (const p of PLATFORMS) {
   else if (p === 'facebook') require('./connectors/facebook')(rooms[p], pc);
 }
 
+let CODE_VER = ''; try { CODE_VER = require('child_process').execSync('git rev-parse --short HEAD', { cwd: __dirname, timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch {}
+const panel = GAME === 'lop-hoc' ? require('./lib/lop-hoc/dieu-khien').createPanel({ rooms, cfg, base: DK_BASE, getLogs: n => LOGS.slice(-n), version: CODE_VER, page: path.join(__dirname, 'public', 'dieu-khien.html') }) : null;
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.m4a': 'audio/mp4', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg' };
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   const seg = u.pathname.split('/').filter(Boolean);
+  if (panel && (u.pathname === '/dieu-khien' || u.pathname.startsWith('/api/dk/'))) return panel.handle(req, res, u);      // bảng điều khiển (chỉ máy này, hoặc có panelPin)
   if (!seg.length) { res.writeHead(302, { Location: '/' + Object.keys(rooms)[0] }); return res.end(); }
   if (seg.length === 1 && rooms[seg[0]]) {   // gắn mã phiên bản vào trang để khung biết mình cũ hay mới
     const html = fs.readFileSync(path.join(PUB, PAGE), 'utf8').replace('__UIVER__', uiVersion());
