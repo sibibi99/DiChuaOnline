@@ -11,11 +11,11 @@ const errs = [], warns = [];
 const err = (m) => { errs.push(m); };
 
 // ---- đố vui ----
-const seenQ = new Map(), perTopic = {}, perDiff = { 1: 0, 2: 0, 3: 0 };
+const perCell = {}, perGrade = {}, seenQ = new Map(), perTopic = {}, perDiff = { 1: 0, 2: 0, 3: 0 };
 DOVUI.forEach((r, i) => {
   const tag = `DOVUI[${i}] "${String(r[0]).slice(0, 50)}"`;
   if (!Array.isArray(r) || r.length < 4) return err(`${tag}: sai cấu trúc`);
-  const [q, a, d, tp] = r;
+  const [q, a, d, tp, kh] = r;
   if (typeof q !== 'string' || q.length < 8 || q.length > 140) err(`${tag}: độ dài câu hỏi ${String(q).length}`);
   if (!Array.isArray(a) || a.length !== 4) return err(`${tag}: cần đúng 4 đáp án`);
   if (a.some(t => typeof t !== 'string' || !t.trim())) err(`${tag}: đáp án rỗng`);
@@ -23,12 +23,14 @@ DOVUI.forEach((r, i) => {
   if (a.some(t => t.length > 34)) err(`${tag}: đáp án quá dài (${a.find(t => t.length > 34)})`);
   if (![1, 2, 3].includes(d)) err(`${tag}: độ khó ${d}`);
   if (!TOPICS.includes(tp)) err(`${tag}: chủ đề ${tp}`);
+  if (![1, 2, 3].includes(kh)) err(`${tag}: thiếu khối lớp (cột 5 phải là 1, 2 hoặc 3)`);
   const all = q + ' | ' + a.join(' | '); if (BAD.test(all)) err(`${tag}: có chữ nhạy cảm (${(BAD.exec(all) || [])[0]})`);
   if (/'/.test(all)) err(`${tag}: có dấu nháy đơn`);
   const k = norm(q); if (seenQ.has(k)) err(`${tag}: trùng đề với DOVUI[${seenQ.get(k)}]`); else seenQ.set(k, i);
   if (a[0] && norm(q).includes(norm(a[0])) && norm(a[0]).length > 5 && !a.slice(1).some(w => norm(q).includes(norm(w)))) warns.push(`${tag}: câu hỏi nhắc lại đáp án đúng (câu đố mẹo thì chấp nhận được)`);
-  perTopic[tp] = (perTopic[tp] || 0) + 1; if (perDiff[d] != null) perDiff[d]++;
+  perCell[tp + kh] = (perCell[tp + kh] || 0) + 1; perGrade[kh] = (perGrade[kh] || 0) + 1; perTopic[tp] = (perTopic[tp] || 0) + 1; if (perDiff[d] != null) perDiff[d]++;
 });
+for (const t of TOPICS) for (const g of [1, 2, 3]) if ((perCell[t + g] || 0) < +(process.env.MIN_CELL || 15)) err(`chủ đề ${t} khối ${g} chỉ có ${perCell[t + g] || 0} câu (cần ≥ ${process.env.MIN_CELL || 15} để bình chọn khối lớp không bị thiếu câu)`);
 if (DOVUI.length < MIN_DOVUI) err(`kho đố vui chỉ có ${DOVUI.length} < ${MIN_DOVUI}`);
 for (const t of TOPICS) if ((perTopic[t] || 0) < Math.floor(MIN_DOVUI / 16)) err(`chủ đề ${t} chỉ có ${perTopic[t] || 0} câu`);
 
@@ -54,7 +56,7 @@ TRUYEN.forEach((t, i) => { if (!t[0] || !Array.isArray(t[1]) || t[1].length < 2 
 
 // ---- chọn câu: chưa hỏi trước; hết kho thì câu cũ >= 7 ngày (lâu nhất trước); không còn thì câu lâu nhất ----
 { const { Room } = require('../lib/lop-hoc/room'), pick = Room.prototype.pickRow, DAY = 86400000, now = Date.now();
-  const mk = () => ({ dT: { dv: 2 }, effDiff: r => r[2], themes: () => null, saveUsedSoon() {}, qstat: new Map() });
+  const mk = () => ({ dT: { dv: 2 }, effDiff: r => r[2], themes: () => null, saveUsedSoon() {}, qstat: new Map(), maxDiff: () => 3, curGrade: () => null, autoGrades: () => [2], pref: null });
   const bank = [0, 1, 2, 3, 4, 5].map(i => ['q' + i, ['a', 'b', 'c', 'd'], 2, 'vn']);
   let used = new Map([['q0', now - 100], ['q1', now - 100]]);                               // còn câu chưa hỏi → phải chọn q2..q5
   for (let i = 0; i < 40; i++) { const r = pick.call(mk(), bank, new Map(used), 'dv'); if (['q0', 'q1'].includes(r[0])) { err('chọn lại câu vừa hỏi khi còn câu chưa hỏi'); break; } }
@@ -72,7 +74,7 @@ TRUYEN.forEach((t, i) => { if (!t[0] || !Array.isArray(t[1]) || t[1].length < 2 
       const k = norm(j); if (SEEN.has(k)) err(`${tag}: trùng câu`); SEEN.add(k); if (/'/.test(j)) err(`${tag}: dấu nháy đơn`); }); }
   if (total < MIN_JOKES) err(`kho câu đùa chỉ có ${total} < ${MIN_JOKES}`);
   console.log(`câu đùa: ${total} câu · ${Object.entries(JOKES).map(([c, l]) => c + ' ' + l.length).join(', ')}`); }
-console.log(`đố vui: ${DOVUI.length} câu · khó 1/2/3: ${perDiff[1]}/${perDiff[2]}/${perDiff[3]} · theo chủ đề: ${TOPICS.map(t => t + ' ' + (perTopic[t] || 0)).join(', ')}`);
+console.log(`đố vui: ${DOVUI.length} câu · khối 1-2/3-5/6-9: ${perGrade[1] || 0}/${perGrade[2] || 0}/${perGrade[3] || 0} · khó 1/2/3: ${perDiff[1]}/${perDiff[2]}/${perDiff[3]} · theo chủ đề: ${TOPICS.map(t => t + ' ' + (perTopic[t] || 0)).join(', ')}`);
 if (warns.length) console.log(`(${warns.length} cảnh báo: ${warns.slice(0, 5).map(w => w.slice(0, 70)).join(' ; ')}${warns.length > 5 ? ' …' : ''})`);
 console.log(`chính tả: ${CHINHTA.length} cặp · truyện: ${TRUYEN.length}`);
 if (errs.length) { console.log(`\n${errs.length} LỖI:`); errs.slice(0, 60).forEach(e => console.log(' - ' + e)); process.exit(1); }

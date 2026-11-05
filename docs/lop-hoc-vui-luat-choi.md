@@ -138,3 +138,10 @@ Trước tiết **Đố vui** và tiết **Kiểm tra 15 phút** (khi có ít nh
 - Kết quả (nhiều phiếu nhất, hòa thì ngẫu nhiên) áp cho **cả bộ câu hỏi đó**: các câu lấy đúng chủ đề đã chọn, độ khó nhắm theo mức đã chọn; không ai bình chọn thì cô chọn chủ đề của ngày và độ khó tự điều chỉnh như cũ. Xong bộ câu thì trở lại bình thường.
 - Test: `node tools/test-binh-chon.js`.
 
+## 18. Khối lớp cho học sinh cấp 1 và cấp 2 (bản 1.8, 05/11)
+- **Kho câu có cột KHỐI**: mỗi câu đố vui gắn 1 = lớp 1–2, 2 = lớp 3–5, 3 = lớp 6–9 (khối thấp nhất mà học sinh bình thường trả lời được). Kho **1.019 câu**: khối 1–2: 271, khối 3–5: 423, khối 6–9: 325; mỗi chủ đề × khối có ít nhất 15 câu. Câu mới do agent soạn, agent khác kiểm độc lập (bỏ câu mơ hồ).
+- **Bình chọn khối lớp** thay "dễ / vừa / khó": gõ `lớp 1` … `lớp 9` (1–2 → khối lớp 1–2, 3–5 → lớp 3–5, 6–9 → lớp 6–9; còn nhận `cấp 1`, `cấp 2` và `dễ` / `vừa` / `khó` như bí danh). Khối thắng phiếu áp cho cả bộ câu đố vui / kiểm tra, các câu toán nhẩm và chính tả sau đó, tới buổi học kế tiếp (không ai bình chọn thì tự theo giờ). Độ khó trong khối vẫn tự điều chỉnh theo tỉ lệ trả lời đúng.
+- **Toán nhẩm theo khối** (đáp án luôn là số nguyên): lớp 1–2 cộng trừ trong 20 / 100, bảng nhân 2-5-10; lớp 3–5 bảng cửu chương, nhân chia nhiều chữ số, biểu thức có ngoặc, chu vi / diện tích hình chữ nhật; lớp 6–9 số nguyên âm, phần trăm, bình phương, căn bậc hai, trung bình cộng, phương trình bậc nhất, hiệu hai bình phương. Câu đọc riêng cho ký hiệu (², √, %, x). Chính tả cũng lấy độ khó theo khối.
+- **Giờ vàng** khi chưa bình chọn: chiều (13–19h) nghiêng lớp 1–5, tối (19h–6h) nghiêng lớp 3–9, ban ngày lớp 3–5.
+- Test: `node tools/test-toan-khoi.js` (tính lại độc lập 3.600 câu toán), `node tools/test-cau-hoi.js` (đủ khối và đủ câu mỗi chủ đề × khối), `node tools/test-binh-chon.js`.
+
