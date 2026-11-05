@@ -163,3 +163,10 @@ Trước tiết **Đố vui** và tiết **Kiểm tra 15 phút** (khi có ít nh
 - Giọng Đô trưởng, ~120 nhịp: xylophone (triangle ngắn) + mộc cầm gảy lệch phách + bass nhún gốc–quãng 5 + trống nhẹ (kick, vỗ, hi-hat bằng noise). Hai vòng hợp âm I–V–vi–IV và I–IV–V–I, mỗi vòng 3 giai điệu, 4 ô nhịp một đoạn, chọn ngẫu nhiên, không lặp liền.
 - Giờ ra chơi (`rachoi`) 130 nhịp, to hơn chút; tiết kể chuyện (`ke`) 104 nhịp, nhỏ, không trống. Cô nói thì nhạc tự hạ (duck có sẵn).
 - Test: `node tools/test-nhac.js` (bộ lập lịch với AudioContext giả).
+
+## 22. Rủ bạn khi lớp dưới 100 bạn (bản 2.1)
+- Số bạn đang xem = `viewers` (TikTok ROOM_USER) nếu có; không có thì số bạn hoạt động trong 5 phút (`crowdSize()`). `lopHoc.shareTarget` (mặc định 100; 0 = tắt).
+- **< 100 bạn**: dải chữ rủ bạn cứ `shareStripLowSec` = 90 giây hiện 9 giây, **xen kẽ** câu rủ thường và một câu mục tiêu vui (`GOAL` trong `meo-hoc.js`), ví dụ "Cả lớp cùng rủ bạn cho đủ 100 bạn nhé! (hiện 37 bạn)". Giọng cô rủ tối đa **1 lần / 3 phút**, chỉ trong vòng lấp chỗ trống (`SHARE` + `GOAL_VOICE`, không đọc số).
+- **≥ 100 bạn**: về nhịp cũ (dải 180 giây, giọng 1 lần / 5 phút, không có câu mục tiêu).
+- Luật chữ không đổi: không quà / điểm / xu / link / SĐT, không hứa lợi ích. Chỉ sửa phía server (`room.js`), cần khởi động lại server mới có.
+- Test: `node tools/test-so-chon.js`.
