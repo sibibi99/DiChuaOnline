@@ -145,3 +145,9 @@ Trước tiết **Đố vui** và tiết **Kiểm tra 15 phút** (khi có ít nh
 - **Giờ vàng** khi chưa bình chọn: chiều (13–19h) nghiêng lớp 1–5, tối (19h–6h) nghiêng lớp 3–9, ban ngày lớp 3–5.
 - Test: `node tools/test-toan-khoi.js` (tính lại độc lập 3.600 câu toán), `node tools/test-cau-hoi.js` (đủ khối và đủ câu mỗi chủ đề × khối), `node tools/test-binh-chon.js`.
 
+
+## 19. Chào khi lớp đông + lấp chỗ trống bằng việc có ích (bản 1.9, 05/11)
+- **Lớp đông (≥ `lopHoc.fewMax` = 12 bạn)**: mỗi bạn vào lớp hiện **bong bóng chữ** trên màn hình ("Chào cô ạ!", "Em chào cô!"…, 1 lần / bạn / 10 phút). Giọng cô **không** chào từng người mà chào **gộp mỗi `lopHoc.crowdGreetSec` = 90 giây**: "Chào A, B và C mới vào lớp!" (tối đa 3 bạn mới nhất, tên sạch; ≤ 10 từ). Không chen lúc đang có câu hỏi, đang chơi trò, đang bình chọn hoặc hàng chờ giọng còn dài (hoãn 10 giây rồi thử lại). Lớp vắng giữ nguyên cách chào cũ (gọi tên, gộp, cách nhau ≥ 8 giây).
+- **Lấp chỗ trống** (khi cô im quá `idleSec`, lớp đông thì `idleBusySec`): xoay vòng, **không lặp liền kề**, giữa 4 loại: **câu đùa** (`cau-dua.js`) · **mẹo học nhanh** (`meo-hoc.js`, 42 mẹo ≤ 15 từ theo khối lớp 1–2 / 3–5 / 6–9, chọn theo khối đang chọn hoặc khối tự đoán, không lặp 24 mẹo gần nhất) · **hỏi nhanh** 1 câu dễ (7 giây sau đọc đáp án) · **gọi tên bạn đứng đầu bảng điểm hôm nay** (điểm trong ngày `dp/dpd`, từ 6 điểm, tên sạch, không gọi lặp một bạn liên tiếp). Loại nào chưa có nội dung thì chuyển loại khác; hết cả thì nhắc gõ "có mặt".
+- Mẹo không nhắc tiền / quà, không hứa kết quả. Nhịp giọng đo bằng `tools/do-nhip-giong.js` không cao hơn bản 1.8.
+- Test: `node tools/test-chao.js` (bong bóng, chào gộp, mẹo ≤ 15 từ theo khối, bạn đứng đầu, xoay vòng).
